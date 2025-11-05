@@ -5,18 +5,20 @@
 ```
 /
 ├── backend/
-│   ├── app/                    # [À DÉVELOPPER] Modules applicatifs Python
-│   │   ├── models.py          # [TODO] Modèles SQLAlchemy (voir attached_assets/)
+│   ├── app/                    # Modules applicatifs Python
+│   │   ├── models.py          # ✅ Modèles SQLAlchemy (Project, SubProject, Node, Relationship, ClassDef)
+│   │   ├── __init__.py        # ✅ Package marker
 │   │   ├── schemas.py         # [TODO] Schémas Pydantic pour API
 │   │   ├── routes/            # [TODO] Endpoints API RESTful
 │   │   │   ├── projects.py    # Routes pour Projects
 │   │   │   ├── subprojects.py # Routes pour SubProjects
 │   │   │   └── nodes.py       # Routes pour Nodes
-│   │   ├── services/          # [TODO] Services métier critiques
-│   │   │   ├── mermaid_parser.py    # Service Import: Mermaid → DB
-│   │   │   └── mermaid_generator.py # Service Export: DB → Mermaid
-│   │   └── database.py        # [TODO] Configuration SQLAlchemy
-│   ├── app.py                 # ✅ Point d'entrée Flask (minimal)
+│   │   └── services/          # [TODO] Services métier critiques
+│   │       ├── mermaid_parser.py    # Service Import: Mermaid → DB
+│   │       └── mermaid_generator.py # Service Export: DB → Mermaid
+│   ├── migrations/            # ✅ Migrations Flask-Migrate
+│   │   └── versions/          # ✅ Scripts de migration générés
+│   ├── run.py                 # ✅ Point d'entrée Flask
 │   ├── requirements.txt       # ✅ Dépendances Python installées
 │   └── .flaskenv             # ✅ Configuration Flask
 │
@@ -58,26 +60,24 @@
 ### ✅ Complété
 - [x] Installation Python 3.11
 - [x] Installation Node.js 20
-- [x] Base de données PostgreSQL créée
+- [x] Base de données PostgreSQL créée et configurée
 - [x] Dépendances Python installées
 - [x] Dépendances Node.js installées
 - [x] Fichiers de configuration créés
 - [x] Arborescence de base créée
-- [x] Points d'entrée minimaux (app.py, main.tsx)
+- [x] Points d'entrée minimaux (run.py, main.tsx)
+- [x] **Modèles SQLAlchemy créés** (Project, SubProject, Node, Relationship, ClassDef)
+- [x] **Flask-Migrate initialisé et migration initiale appliquée**
+- [x] **Toutes les tables créées dans PostgreSQL**
 
 ### 🔨 À Développer
 
 #### Backend (Python/Flask)
-1. **Modèles de données** (`backend/app/models.py`)
-   - Implémenter les classes SQLModel fournies dans `attached_assets/`
-   - Project, SubProject, Node, Relationship, ClassDef
+1. ~~**Modèles de données**~~ ✅ **TERMINÉ** (`backend/app/models.py`)
+   - ✅ Tous les modèles SQLAlchemy créés (Project, SubProject, Node, Relationship, ClassDef)
+   - ✅ Tables créées dans PostgreSQL avec Flask-Migrate
 
-2. **Configuration base de données** (`backend/app/database.py`)
-   - Connexion PostgreSQL via DATABASE_URL
-   - Session SQLAlchemy
-   - Initialisation des tables
-
-3. **Schémas Pydantic** (`backend/app/schemas.py`)
+2. **Schémas Pydantic** (`backend/app/schemas.py`)
    - Schémas de validation pour chaque modèle
    - DTOs pour les requêtes/réponses API
 
@@ -115,9 +115,9 @@
 ### Développement
 ```bash
 # Backend
-cd backend && python app.py
+cd backend && python run.py
 
-# Frontend
+# Frontend (déjà actif via workflow)
 cd frontend && npm run dev
 ```
 

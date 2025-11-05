@@ -70,7 +70,7 @@ Copiez `.env.example` vers `.env` et ajustez si nécessaire.
 ### Lancer le Backend (port 5001)
 ```bash
 cd backend
-python app.py
+python run.py
 ```
 
 ### Lancer le Frontend (port 5000)

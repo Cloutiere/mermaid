@@ -75,17 +75,20 @@ attached_assets/  - Documents de référence
 ### Complété ✅
 - [x] Python 3.11 et Node.js 20 installés
 - [x] PostgreSQL créé avec variables d'environnement
-- [x] Dépendances backend installées (Flask, SQLAlchemy, SQLModel, Pydantic, etc.)
+- [x] Dépendances backend installées (Flask, SQLAlchemy, Pydantic, Flask-Migrate, etc.)
 - [x] Dépendances frontend installées (React, TypeScript, Vite, Tailwind, Mermaid)
 - [x] Arborescence du projet créée
 - [x] Fichiers de configuration créés
 - [x] Workflow frontend configuré
-- [x] Points d'entrée minimaux (app.py, main.tsx)
+- [x] Points d'entrée créés (run.py, main.tsx)
+- [x] **Modèles SQLAlchemy complets** (backend/app/models.py)
+- [x] **Base de données initialisée** avec Flask-Migrate
+- [x] **Toutes les tables créées** (project, subproject, node, relationship, classdef)
 
 ### À Développer 🔨
 #### Backend
-1. Modèles SQLModel (`backend/app/models.py`)
-2. Configuration DB et migrations (`backend/app/database.py`)
+1. ~~Modèles SQLAlchemy~~ ✅ **TERMINÉ**
+2. ~~Configuration DB et migrations~~ ✅ **TERMINÉ**
 3. Schémas Pydantic (`backend/app/schemas.py`)
 4. Routes API RESTful (`backend/app/routes/`)
 5. Service de parsing Mermaid → DB (`backend/app/services/mermaid_parser.py`)
@@ -128,11 +131,14 @@ curl http://localhost:5001/api/health
 
 ## Modifications Récentes
 
-### 5 novembre 2025 - Configuration initiale
+### 5 novembre 2025 - Configuration initiale ET base de données
 - Installation complète de l'environnement Python/Flask + React/TypeScript
-- Configuration PostgreSQL
+- Configuration PostgreSQL avec toutes les variables d'environnement
 - Installation de toutes les dépendances
 - Création de l'arborescence du projet
 - Configuration Vite avec proxy API
 - Mise en place du workflow frontend
-- Fichiers d'entrée minimaux pour démarrage des serveurs
+- **Création des modèles SQLAlchemy complets** (Project, SubProject, Node, Relationship, ClassDef)
+- **Initialisation Flask-Migrate** et génération de la migration initiale
+- **Toutes les tables créées dans PostgreSQL** avec relations et contraintes
+- Fichier principal renommé de `app.py` à `run.py` pour éviter conflits de noms

@@ -1,11 +1,15 @@
+"""
+Modèles de données pour l'éditeur visuel de structure narrative Mermaid.
+Utilise SQLAlchemy avec Flask-SQLAlchemy pour la compatibilité avec Flask-Migrate.
+"""
 import enum
-from typing import Optional, List, Any, Dict
+from typing import Optional
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, Enum as SQLEnum, JSON, UniqueConstraint
+from sqlalchemy.orm import relationship
+from flask_sqlalchemy import SQLAlchemy
 
-# Utilisation des types et outils spécifiques de SQLModel
-from sqlmodel import Field, SQLModel, Relationship, UniqueConstraint
-
-# Utilisation des types SQLAlchemy bruts pour des cas spécifiques (TEXT, ENUM natif, JSON)
-from sqlalchemy import Column, Text, Enum as SQLEnum, JSON as SQLJSON
+# Initialisation de db sera faite dans app.py
+db = SQLAlchemy()
 
 
 # --- Définition des ENUM pour l'intégrité des données ---
@@ -18,123 +22,103 @@ class LinkType(str, enum.Enum):
 
 
 # --- 1. Modèle Project (Saga) ---
-class Project(SQLModel, table=True):
+class Project(db.Model):
     """
     Conteneur de haut niveau pour l'ensemble des subprojects.
     """
-    id: Optional[int] = Field(default=None, primary_key=True)
-    # Réf. DDA 4.A : 'title'
-    title: str = Field(index=True, max_length=255) 
-
+    __tablename__ = 'project'
+    
+    id = Column(Integer, primary_key=True)
+    title = Column(String(255), nullable=False, index=True)
+    
     # Relations
-    subprojects: List["SubProject"] = Relationship(back_populates="project")
+    subprojects = relationship("SubProject", back_populates="project", cascade="all, delete-orphan")
 
 
 # --- 2. Modèle SubProject (Livre / Graphe Narratif) ---
-class SubProject(SQLModel, table=True):
+class SubProject(db.Model):
     """
     Représente un unique graphe narratif.
     """
-    id: Optional[int] = Field(default=None, primary_key=True)
-    project_id: int = Field(foreign_key="project.id", index=True)
-    title: str = Field(index=True, max_length=255)
-
-    # Stocke la définition Mermaid brute (Non listée explicitement dans 4.A mais fondamentale)
-    mermaid_definition: str = Field(sa_column=Column(Text)) 
-
-    # DDA 5 : Stocke les métadonnées de disposition visuelle (JSON)
-    visual_layout: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column(SQLJSON))
-
+    __tablename__ = 'subproject'
+    
+    id = Column(Integer, primary_key=True)
+    project_id = Column(Integer, ForeignKey('project.id'), nullable=False, index=True)
+    title = Column(String(255), nullable=False, index=True)
+    mermaid_definition = Column(Text, nullable=False)
+    visual_layout = Column(JSON, nullable=True)
+    
     # Relations
-    project: Project = Relationship(back_populates="subprojects")
-
-    # Cascades : Si SubProject est supprimé, tous ses composants le sont aussi.
-    nodes: List["Node"] = Relationship(back_populates="subproject", cascade="all, delete-orphan")
-    relationships: List["Relationship"] = Relationship(back_populates="subproject", cascade="all, delete-orphan")
-    class_defs: List["ClassDef"] = Relationship(back_populates="subproject", cascade="all, delete-orphan")
+    project = relationship("Project", back_populates="subprojects")
+    nodes = relationship("Node", back_populates="subproject", cascade="all, delete-orphan")
+    relationships = relationship("Relationship", back_populates="subproject", cascade="all, delete-orphan")
+    class_defs = relationship("ClassDef", back_populates="subproject", cascade="all, delete-orphan")
 
 
 # --- 3. Modèle Node (Paragraphe / Unité du Graphe) ---
-class Node(SQLModel, table=True):
+class Node(db.Model):
     """
     Représente un nœud individuel dans un subproject.
     """
-    id: Optional[int] = Field(default=None, primary_key=True)
-    subproject_id: int = Field(foreign_key="subproject.id", index=True)
-
-    # Réf. DDA 4.A : mermaid_id (ex: A, B, C1)
-    mermaid_id: str = Field(max_length=50) 
-    # Réf. DDA 4.A : title, text_content, style_class_ref
-    title: Optional[str] = Field(default=None, max_length=255) 
-    text_content: str = Field(sa_column=Column(Text))
-    style_class_ref: Optional[str] = Field(default=None, max_length=100)
-
-    # Contrainte d'unicité composée : mermaid_id doit être unique au sein du même subproject
-    __table_args__ = (UniqueConstraint("subproject_id", "mermaid_id"),)
-
+    __tablename__ = 'node'
+    __table_args__ = (UniqueConstraint('subproject_id', 'mermaid_id', name='uq_subproject_mermaid_id'),)
+    
+    id = Column(Integer, primary_key=True)
+    subproject_id = Column(Integer, ForeignKey('subproject.id'), nullable=False, index=True)
+    mermaid_id = Column(String(50), nullable=False)
+    title = Column(String(255), nullable=True)
+    text_content = Column(Text, nullable=False)
+    style_class_ref = Column(String(100), nullable=True)
+    
     # Relations
-    subproject: SubProject = Relationship(back_populates="nodes")
-
-    # Relations où ce nœud est la source ou la cible.
-    source_relationships: List["Relationship"] = Relationship(
+    subproject = relationship("SubProject", back_populates="nodes")
+    source_relationships = relationship(
+        "Relationship",
+        foreign_keys="Relationship.source_node_id",
         back_populates="source_node",
-        foreign_key="relationship.source_node_id",
-        # La suppression d'un nœud supprime les relations associées
-        cascade="all, delete-orphan" 
+        cascade="all, delete-orphan"
     )
-    target_relationships: List["Relationship"] = Relationship(
+    target_relationships = relationship(
+        "Relationship",
+        foreign_keys="Relationship.target_node_id",
         back_populates="target_node",
-        foreign_key="relationship.target_node_id",
-        # La suppression d'un nœud supprime les relations associées
         cascade="all, delete-orphan"
     )
 
 
 # --- 4. Modèle Relationship (Lien entre Nœuds) ---
-class Relationship(SQLModel, table=True):
+class Relationship(db.Model):
     """
     Représente un lien dirigé entre deux nœuds.
     """
-    id: Optional[int] = Field(default=None, primary_key=True)
-    subproject_id: int = Field(foreign_key="subproject.id", index=True)
-
-    # Clés étrangères vers la table Node.
-    source_node_id: int = Field(foreign_key="node.id", index=True)
-    target_node_id: int = Field(foreign_key="node.id", index=True)
-
-    # Réf. DDA 4.A : label (TEXT) et color (String)
-    label: Optional[str] = Field(default=None, sa_column=Column(Text))
-    color: Optional[str] = Field(default=None, max_length=20) 
-
-    # Réf. DDA 4.A : link_type (ENUM natif PostgreSQL)
-    link_type: LinkType = Field(sa_column=Column(SQLEnum(LinkType, name="link_type_enum"), nullable=False))
-
+    __tablename__ = 'relationship'
+    
+    id = Column(Integer, primary_key=True)
+    subproject_id = Column(Integer, ForeignKey('subproject.id'), nullable=False, index=True)
+    source_node_id = Column(Integer, ForeignKey('node.id'), nullable=False, index=True)
+    target_node_id = Column(Integer, ForeignKey('node.id'), nullable=False, index=True)
+    label = Column(Text, nullable=True)
+    color = Column(String(20), nullable=True)
+    link_type = Column(SQLEnum(LinkType, name="link_type_enum", create_type=True), nullable=False)
+    
     # Relations
-    subproject: SubProject = Relationship(back_populates="relationships")
-
-    source_node: Node = Relationship(
-        back_populates="source_relationships",
-        foreign_key=[source_node_id] 
-    )
-    target_node: Node = Relationship(
-        back_populates="target_relationships",
-        foreign_key=[target_node_id] 
-    )
+    subproject = relationship("SubProject", back_populates="relationships")
+    source_node = relationship("Node", foreign_keys=[source_node_id], back_populates="source_relationships")
+    target_node = relationship("Node", foreign_keys=[target_node_id], back_populates="target_relationships")
 
 
 # --- 5. Modèle ClassDef (Définition de Style Mermaid) ---
-class ClassDef(SQLModel, table=True):
+class ClassDef(db.Model):
     """
     Définit des styles ou des classes utilisés dans le graphe.
     """
-    id: Optional[int] = Field(default=None, primary_key=True)
-    subproject_id: int = Field(foreign_key="subproject.id", index=True)
-    # Réf. DDA 4.A : name et definition_raw
-    name: str = Field(max_length=100)
-    definition_raw: str = Field(sa_column=Column(Text)) 
-
-    # Contrainte d'unicité composée : name doit être unique au sein du même subproject
-    __table_args__ = (UniqueConstraint("subproject_id", "name"),)
-
+    __tablename__ = 'classdef'
+    __table_args__ = (UniqueConstraint('subproject_id', 'name', name='uq_subproject_classdef_name'),)
+    
+    id = Column(Integer, primary_key=True)
+    subproject_id = Column(Integer, ForeignKey('subproject.id'), nullable=False, index=True)
+    name = Column(String(100), nullable=False)
+    definition_raw = Column(Text, nullable=False)
+    
     # Relations
-    subproject: SubProject = Relationship(back_populates="class_defs")
+    subproject = relationship("SubProject", back_populates="class_defs")
