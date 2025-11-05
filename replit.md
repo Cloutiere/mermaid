@@ -89,10 +89,11 @@ attached_assets/  - Documents de référence
 #### Backend
 1. ~~Modèles SQLAlchemy~~ ✅ **TERMINÉ**
 2. ~~Configuration DB et migrations~~ ✅ **TERMINÉ**
-3. Schémas Pydantic (`backend/app/schemas.py`)
-4. Routes API RESTful (`backend/app/routes/`)
-5. Service de parsing Mermaid → DB (`backend/app/services/mermaid_parser.py`)
-6. Service de génération DB → Mermaid (`backend/app/services/mermaid_generator.py`)
+3. ~~Schémas Pydantic~~ ✅ **TERMINÉ** (`backend/app/schemas.py`)
+4. ~~Routes API RESTful CRUD~~ ✅ **TERMINÉ** (Project, SubProject, Node, Relationship)
+5. ~~Services métier CRUD~~ ✅ **TERMINÉ** (tous les services implémentés)
+6. Service de parsing Mermaid → DB (`backend/app/services/mermaid_parser.py`)
+7. Service de génération DB → Mermaid (`backend/app/services/mermaid_generator.py`)
 
 #### Frontend
 1. Types TypeScript API (`frontend/src/types/api.ts`)
@@ -142,3 +143,19 @@ curl http://localhost:5001/api/health
 - **Initialisation Flask-Migrate** et génération de la migration initiale
 - **Toutes les tables créées dans PostgreSQL** avec relations et contraintes
 - Fichier principal renommé de `app.py` à `run.py` pour éviter conflits de noms
+
+### 5 novembre 2025 - Améliorations architecture + API CRUD complète
+- ✅ **Factory Pattern** : `create_app()` dans `app/__init__.py`
+- ✅ **CORS sécurisée** : Configuration restrictive avec FRONTEND_URL
+- ✅ **Gestion d'erreurs globale** : Handler JSON pour 400/404/405/500
+- ✅ **Configuration multi-environnement** : Development/Production/Testing
+- ✅ **Blueprints API structurés** : Routes organisées par ressource
+- ✅ **Import circulaire résolu** : Blueprints importés dans `create_app()`
+- ✅ **sqlmodel retiré** : Utilisation de SQLAlchemy pur uniquement
+- ✅ **Tous les schémas Pydantic créés** : Validation complète des données
+- ✅ **Services CRUD complets** : Project, SubProject, Node, Relationship
+- ✅ **API RESTful complète** : 
+  - `/api/projects` - CRUD complet
+  - `/api/subprojects` - CRUD complet (filtrage par project_id)
+  - `/api/nodes` - CRUD complet (filtrage par subproject_id)
+  - `/api/nodes/relationships` - CRUD complet pour les relations

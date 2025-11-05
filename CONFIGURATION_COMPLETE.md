@@ -124,16 +124,21 @@ frontend/
 ## 🎯 Prochaines Étapes de Développement
 
 ### Backend (par ordre de priorité)
-1. **Schémas Pydantic** (`backend/app/schemas.py`)
-   - Créer les schémas de validation pour chaque modèle
-   - DTOs pour les requêtes/réponses API
+1. ~~**Schémas Pydantic**~~ ✅ **TERMINÉ** (`backend/app/schemas.py`)
+   - ✅ Tous les schémas créés : Project, SubProject, Node, Relationship, ClassDef
+   - ✅ Validation complète avec Pydantic v2
 
-2. **Routes API RESTful** (`backend/app/routes/`)
-   - `projects.py` : CRUD pour les projets
-   - `subprojects.py` : CRUD pour les sous-projets
-   - `nodes.py` : CRUD pour les nœuds et relations
+2. ~~**Routes API RESTful**~~ ✅ **TERMINÉ** (`backend/app/routes/`)
+   - ✅ `projects.py` : CRUD complet
+   - ✅ `subprojects.py` : CRUD complet + filtrage par project_id
+   - ✅ `nodes.py` : CRUD complet pour nodes + relationships
 
-3. **Services de Transformation** (`backend/app/services/`)
+3. ~~**Services métier CRUD**~~ ✅ **TERMINÉ** (`backend/app/services/`)
+   - ✅ `projects.py` : Logique métier pour Project
+   - ✅ `subprojects.py` : Logique métier pour SubProject
+   - ✅ `nodes.py` : Logique métier pour Node et Relationship
+
+4. **Services de Transformation** (`backend/app/services/`) - **EN ATTENTE**
    - `mermaid_parser.py` : Parser le code Mermaid → Créer entités en DB
    - `mermaid_generator.py` : Lire DB → Générer code Mermaid
 
@@ -178,11 +183,20 @@ Ces variables sont automatiquement disponibles (fournies par Replit) :
 
 ## ✨ Changements Importants
 
-### Modifications de la Configuration Initiale
-1. **SQLModel → SQLAlchemy** : Passage à SQLAlchemy pur pour une meilleure compatibilité avec Flask-Migrate
+### Configuration Initiale
+1. **SQLModel → SQLAlchemy** : Passage à SQLAlchemy pur pour compatibilité Flask-Migrate
 2. **app.py → run.py** : Renommage pour éviter les conflits avec le dossier `app/`
 3. **Modèles complets** : Tous les modèles SQLAlchemy créés et testés
 4. **Base de données initialisée** : Toutes les tables créées avec migration initiale appliquée
+
+### Améliorations Architecture (Implémentées)
+1. ✅ **Factory Pattern** : `create_app()` pour flexibilité de configuration
+2. ✅ **CORS Sécurisée** : Origins restreintes via `FRONTEND_URL`
+3. ✅ **Gestion d'Erreurs** : Handler global pour erreurs HTTP au format JSON
+4. ✅ **Configuration Multi-Env** : Classes séparées Dev/Prod/Test
+5. ✅ **Blueprints Structurés** : Organisation claire des routes API
+6. ✅ **Import Circulaire Résolu** : Blueprints chargés dans `create_app()`
+7. ✅ **API CRUD Complète** : Tous les endpoints implémentés et testés
 
 ---
 
