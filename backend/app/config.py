@@ -1,53 +1,88 @@
 # backend/app/config.py
+# Version 1.0
+
 import os
 from dotenv import load_dotenv
 
-# Charger les variables d'environnement du fichier .env
+# Charger les variables d'environnement à partir d'un fichier .env
+# Ceci est utile pour les configurations locales (dev, test)
 load_dotenv()
 
-class Config:
+class BaseConfig:
     """Configuration de base pour l'application."""
+    # Clé secrète pour signer les tokens de session, etc.
+    # Doit être une variable d'environnement en production.
+    SECRET_KEY = os.environ.get('SECRET_KEY', 'une-cle-secrete-par-defaut-qui-devrait-etre-changee')
 
-    # Sécurité et Authentification
-    SECRET_KEY = os.getenv('SESSION_SECRET', 'a_default_secret_for_dev')
+    # Configuration de la base de données PostgreSQL
+    # Utilise une variable d'environnement DATABASE_URL
+    # Exemple: postgresql://user:password@host:port/database
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'postgresql://user:password@host:port/database')
+    SQLALCHEMY_TRACK_MODIFICATIONS = False # Désactive le suivi des modifications pour la performance
 
-    # Base de données
-    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    # URL du frontend pour la configuration CORS
+    FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:5000') # Par défaut, le frontend tourne sur le port 5000
 
-    # CORS (Sécurité)
-    FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5000')
-
-    # Autres configurations
+    # Mode Debug
+    DEBUG = False
     TESTING = False
-    DEBUG = False
 
-class DevelopmentConfig(Config):
-    """Configurations spécifiques au développement."""
+class DevelopmentConfig(BaseConfig):
+    """Configuration pour l'environnement de développement."""
     DEBUG = True
-
-class ProductionConfig(Config):
-    """Configurations spécifiques à la production."""
-    # Désactiver le mode débogage en production
-    DEBUG = False
-
-class TestingConfig(Config):
-    """Configurations spécifiques aux tests."""
     TESTING = True
-    # Utiliser une base de données en mémoire ou de test
-    SQLALCHEMY_DATABASE_URI = os.getenv('TEST_DATABASE_URL', 'sqlite:///:memory:')
+    # Utilise une URI de base de données locale pour le développement
+    # Assurez-vous que cette variable d'environnement est définie ou modifiez-la directement.
+    # Exemple: export DATABASE_URL="postgresql://myuser:mypassword@localhost:5432/mydatabase_dev"
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'postgresql://user:password@localhost:5432/narrative_editor_dev')
+    # Si vous n'avez pas configuré DATABASE_URL, vous pouvez utiliser ceci pour tester rapidement
+    # SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:' # Utilisation d'une base de données en mémoire pour le dev rapide
 
-# Mappage des noms d'environnement vers les classes de configuration
-config_map = {
-    'development': DevelopmentConfig,
-    'production': ProductionConfig,
-    'testing': TestingConfig,
-    'default': DevelopmentConfig
-}
+class TestingConfig(BaseConfig):
+    """Configuration pour les tests automatisés."""
+    DEBUG = True
+    TESTING = True
+    # Utilise une base de données en mémoire pour les tests afin d'isoler les exécutions
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
+    SQLALCHEMY_TRACK_MODIFICATIONS = False # Pas nécessaire en mémoire
 
-def get_config(env_name=None):
-    """Récupère la configuration appropriée en fonction du nom de l'environnement."""
-    if env_name is None:
-        env_name = os.getenv('FLASK_ENV', 'default')
+class ProductionConfig(BaseConfig):
+    """Configuration pour l'environnement de production."""
+    DEBUG = False
+    TESTING = False
+    # Assurez-vous que DATABASE_URL est correctement configurée dans l'environnement de production
+    # Exemple: DATABASE_URL="postgresql://user:password@prod-db.example.com:5432/narrative_editor"
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
+    if not SQLALCHEMY_DATABASE_URI:
+        raise ValueError("DATABASE_URL doit être définie en mode production.")
 
-    return config_map.get(env_name.lower(), config_map['default'])
+    # La clé secrète est CRUCIALE en production
+    SECRET_KEY = os.environ.get('SECRET_KEY')
+    if not SECRET_KEY:
+        raise ValueError("SECRET_KEY doit être définie en mode production.")
+
+    # FRONTEND_URL doit être l'URL de votre application frontend déployée
+    FRONTEND_URL = os.environ.get('FRONTEND_URL')
+    if not FRONTEND_URL:
+        raise ValueError("FRONTEND_URL doit être définie en mode production.")
+
+
+# Dictionnaire pour mapper les noms de configuration aux classes
+config_by_name = dict(
+    development=DevelopmentConfig,
+    testing=TestingConfig,
+    production=ProductionConfig
+)
+
+def get_config(config_name: str = None):
+    """
+    Récupère l'objet de configuration approprié.
+    Si config_name est None, utilise la variable d'environnement FLASK_ENV.
+    """
+    if config_name is None:
+        config_name = os.environ.get('FLASK_ENV', 'development') # Par défaut, développement
+
+    if config_name not in config_by_name:
+        raise ValueError(f"Configuration '{config_name}' non reconnue. Options disponibles : {list(config_by_name.keys())}")
+
+    return config_by_name[config_name]()

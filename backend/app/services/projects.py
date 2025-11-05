@@ -1,57 +1,83 @@
-# backend/app/services/projects.py
-from typing import List
-from werkzeug.exceptions import NotFound
-from sqlalchemy.exc import IntegrityError # Optionnel, pour les erreurs de DB spécifiques
+    # backend/app/services/projects.py
+    # Version 1.0
 
-from app import db
-from app.models import Project
-from app.schemas import ProjectCreate
+    from typing import List
+    from sqlalchemy.orm import selectinload
+    from werkzeug.exceptions import NotFound, BadRequest
+    from app import db
+    from app.models import Project
+    from app.schemas import ProjectCreate, ProjectRead # Import schemas for validation and reading
 
+    def get_all_projects() -> List[Project]:
+        """Récupère tous les projets de la base de données."""
+        # Utilise selectinload pour charger les subprojects associés de manière efficace
+        # Le type: ignore est nécessaire car mypy ne peut pas toujours inférer le type des relations SQLAlchemy avec selectinload
+        projects = db.session.execute(
+            db.select(Project).options(selectinload(Project.subprojects)) # type: ignore[arg-type]
+        ).scalars().all()
+        return projects
 
-def get_all_projects() -> List[Project]:
-    """Récupère tous les projets."""
-    # Utilisation de db.select pour une approche compatible SQLAlchemy 2.0
-    return db.session.execute(db.select(Project)).scalars().all()
+    def get_project_by_id(project_id: int) -> Project:
+        """Récupère un projet spécifique par son ID."""
+        # Utilise selectinload pour charger les subprojects associés
+        project = db.session.execute(
+            db.select(Project)
+            .options(selectinload(Project.subprojects)) # type: ignore[arg-type]
+            .filter_by(id=project_id)
+        ).scalar_one_or_none()
 
+        if project is None:
+            raise NotFound(f"Project ID {project_id} not found.")
+        return project
 
-def get_project_by_id(project_id: int) -> Project:
-    """Récupère un projet par ID, lève 404 si non trouvé."""
-    # db.session.get est la méthode la plus efficace pour récupérer par clé primaire
-    project = db.session.get(Project, project_id)
-    if project is None:
-        # Werkzeug NotFound sera intercepté par app.register_error_handler(404, handle_api_error)
-        raise NotFound(f"Project with ID {project_id} not found.")
-    return project
+    def create_project(project_data: ProjectCreate) -> Project:
+        """Crée un nouveau projet."""
+        # Vérification de base si le titre existe (déjà géré par Pydantic, mais bonne pratique ici aussi)
+        if not project_data.title:
+            raise BadRequest("Project title cannot be empty.")
 
+        # Vérifier s'il existe déjà un projet avec le même titre (optionnel, selon les exigences métiers)
+        existing_project = db.session.execute(
+            db.select(Project).filter_by(title=project_data.title)
+        ).scalar_one_or_none()
+        if existing_project:
+            raise BadRequest(f"Project with title '{project_data.title}' already exists.")
 
-def create_project(data: ProjectCreate) -> Project:
-    """Crée un nouveau projet à partir des données validées."""
-    project = Project(
-        title=data.title,
-    )
-    db.session.add(project)
-    db.session.commit()
-    db.session.refresh(project)
-    return project
+        new_project = Project(title=project_data.title)
+        db.session.add(new_project)
+        db.session.commit() # Commit pour s'assurer que l'ID est généré avant de le retourner
 
+        # Recharger le projet avec ses relations pour la réponse API si nécessaire,
+        # mais ici on retourne juste le modèle créé.
+        # Si la réponse API doit contenir les subprojects, il faudrait le recharger avec selectinload.
+        db.session.refresh(new_project)
+        return new_project
 
-def update_project(project_id: int, data: ProjectCreate) -> Project:
-    """Met à jour un projet existant. Lève 404 si non trouvé."""
-    # Récupère l'entité, ce qui gère automatiquement le 404
-    project = get_project_by_id(project_id)
+    def update_project(project_id: int, project_data: ProjectCreate) -> Project:
+        """Met à jour un projet existant."""
+        # Vérification de base si le titre existe
+        if not project_data.title:
+            raise BadRequest("Project title cannot be empty.")
 
-    # Mise à jour des champs à partir des données validées
-    project.title = data.title
+        project = get_project_by_id(project_id) # Utilise la fonction pour gérer le NotFound
 
-    db.session.commit()
-    # Pas besoin de refresh ici si on n'a pas touché à des relations ou des champs calculés
-    return project
+        # Vérifier s'il existe déjà un projet avec le même titre (excluant le projet actuel)
+        existing_project_with_same_title = db.session.execute(
+            db.select(Project).filter(Project.id != project_id, Project.title == project_data.title)
+        ).scalar_one_or_none()
+        if existing_project_with_same_title:
+            raise BadRequest(f"Project with title '{project_data.title}' already exists.")
 
+        project.title = project_data.title
+        db.session.commit()
 
-def delete_project(project_id: int) -> bool:
-    """Supprime un projet par ID. Lève 404 si non trouvé."""
-    project = get_project_by_id(project_id)
+        # Recharger le projet pour s'assurer que les relations sont à jour si elles sont chargées dans la réponse
+        db.session.refresh(project)
+        return project
 
-    db.session.delete(project)
-    db.session.commit()
-    return True
+    def delete_project(project_id: int) -> None:
+        """Supprime un projet existant."""
+        project = get_project_by_id(project_id) # Utilise la fonction pour gérer le NotFound
+
+        db.session.delete(project)
+        db.session.commit()
