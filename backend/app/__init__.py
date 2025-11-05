@@ -5,11 +5,8 @@ from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 
-# Nouveaux imports pour la configuration et les routes
+# Import de la configuration (pas de routes ici pour éviter les imports circulaires)
 from app.config import get_config
-from app.routes.projects import projects_bp
-from app.routes.subprojects import subprojects_bp
-from app.routes.nodes import nodes_bp
 
 # Initialisation des extensions qui seront liées à l'application plus tard
 db = SQLAlchemy()
@@ -76,6 +73,11 @@ def create_app(config_name=None):
 
     # Enregistrement des Blueprints
     app.register_blueprint(main) # Le health check est à /api/health
+
+    # Import des blueprints ICI (après init de db) pour éviter les imports circulaires
+    from app.routes.projects import projects_bp
+    from app.routes.subprojects import subprojects_bp
+    from app.routes.nodes import nodes_bp
 
     # Blueprints d'API structurés
     app.register_blueprint(projects_bp, url_prefix='/api/projects')

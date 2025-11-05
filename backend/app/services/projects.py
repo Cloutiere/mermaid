@@ -3,7 +3,7 @@ from typing import List
 from werkzeug.exceptions import NotFound
 from sqlalchemy.exc import IntegrityError # Optionnel, pour les erreurs de DB spécifiques
 
-from app.__init__ import db
+from app import db
 from app.models import Project
 from app.schemas import ProjectCreate
 

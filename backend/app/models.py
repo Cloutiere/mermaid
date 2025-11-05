@@ -8,7 +8,7 @@ from typing import Optional
 from sqlalchemy import Column, Integer, String, Text, ForeignKey, Enum as SQLEnum, JSON, UniqueConstraint
 from sqlalchemy.orm import relationship
 # Importation de l'objet db depuis l'initialisateur de l'application
-from .__init__ import db
+from . import db
 
 
 # --- Définition des ENUM pour l'intégrité des données ---

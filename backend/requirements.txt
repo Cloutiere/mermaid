@@ -4,7 +4,6 @@ Flask-CORS==4.0.0
 
 # Database & ORM
 SQLAlchemy==2.0.23
-sqlmodel==0.0.14
 psycopg2-binary==2.9.9
 
 # Validation & Serialization
