@@ -1,0 +1,78 @@
+client:495 [vite] connecting...
+client:618 [vite] connected.
+chunk-EJTTOCY5.js?v=ff7207c0:21551 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+react-router-dom.js?v=ff7207c0:4393 ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+warnOnce @ react-router-dom.js?v=ff7207c0:4393
+logDeprecation @ react-router-dom.js?v=ff7207c0:4396
+logV6DeprecationWarnings @ react-router-dom.js?v=ff7207c0:4399
+(anonyme) @ react-router-dom.js?v=ff7207c0:5271
+commitHookEffectListMount @ chunk-EJTTOCY5.js?v=ff7207c0:16915
+commitPassiveMountOnFiber @ chunk-EJTTOCY5.js?v=ff7207c0:18156
+commitPassiveMountEffects_complete @ chunk-EJTTOCY5.js?v=ff7207c0:18129
+commitPassiveMountEffects_begin @ chunk-EJTTOCY5.js?v=ff7207c0:18119
+commitPassiveMountEffects @ chunk-EJTTOCY5.js?v=ff7207c0:18109
+flushPassiveEffectsImpl @ chunk-EJTTOCY5.js?v=ff7207c0:19490
+flushPassiveEffects @ chunk-EJTTOCY5.js?v=ff7207c0:19447
+(anonyme) @ chunk-EJTTOCY5.js?v=ff7207c0:19328
+workLoop @ chunk-EJTTOCY5.js?v=ff7207c0:197
+flushWork @ chunk-EJTTOCY5.js?v=ff7207c0:176
+performWorkUntilDeadline @ chunk-EJTTOCY5.js?v=ff7207c0:384
+react-router-dom.js?v=ff7207c0:4393 ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+warnOnce @ react-router-dom.js?v=ff7207c0:4393
+logDeprecation @ react-router-dom.js?v=ff7207c0:4396
+logV6DeprecationWarnings @ react-router-dom.js?v=ff7207c0:4402
+(anonyme) @ react-router-dom.js?v=ff7207c0:5271
+commitHookEffectListMount @ chunk-EJTTOCY5.js?v=ff7207c0:16915
+commitPassiveMountOnFiber @ chunk-EJTTOCY5.js?v=ff7207c0:18156
+commitPassiveMountEffects_complete @ chunk-EJTTOCY5.js?v=ff7207c0:18129
+commitPassiveMountEffects_begin @ chunk-EJTTOCY5.js?v=ff7207c0:18119
+commitPassiveMountEffects @ chunk-EJTTOCY5.js?v=ff7207c0:18109
+flushPassiveEffectsImpl @ chunk-EJTTOCY5.js?v=ff7207c0:19490
+flushPassiveEffects @ chunk-EJTTOCY5.js?v=ff7207c0:19447
+(anonyme) @ chunk-EJTTOCY5.js?v=ff7207c0:19328
+workLoop @ chunk-EJTTOCY5.js?v=ff7207c0:197
+flushWork @ chunk-EJTTOCY5.js?v=ff7207c0:176
+performWorkUntilDeadline @ chunk-EJTTOCY5.js?v=ff7207c0:384
+MermaidViewer.tsx:29 MermaidViewer: useEffect triggered, code length: 6735
+MermaidViewer.tsx:29 MermaidViewer: useEffect triggered, code length: 6735
+MermaidViewer.tsx:60 MermaidViewer: Syntax validation PASSED
+MermaidViewer.tsx:60 MermaidViewer: Syntax validation PASSED
+MermaidViewer.tsx:84 MermaidViewer: Render SUCCESS but OBSOLETE, current version: 2 render version: 1
+MermaidViewer.tsx:75 MermaidViewer: Render SUCCESS, version: 2
+MermaidViewer.tsx:29 MermaidViewer: useEffect triggered, code length: 6736
+MermaidViewer.tsx:62 MermaidViewer: Syntax validation FAILED
+MermaidViewer.tsx:94 MermaidViewer: Render ERROR, version: 3 Error: Parse error on line 13:
+...1[131]    A267[267]D    A125[125]    
+----------------------^
+Expecting 'SEMI', 'NEWLINE', 'SPACE', 'EOF', 'STYLE_SEPARATOR', 'START_LINK', 'LINK', got 'NODE_STRING'
+    at Parser.parseError (chunk-7NR2LBMK.js?v=ff7207c0:370:21)
+    at Parser.parse (chunk-7NR2LBMK.js?v=ff7207c0:435:16)
+    at Diagram.parse (chunk-UIYA52SD.js?v=ff7207c0:15707:17)
+    at new Diagram (chunk-UIYA52SD.js?v=ff7207c0:15694:10)
+    at getDiagramFromText$1 (chunk-UIYA52SD.js?v=ff7207c0:15731:10)
+    at getDiagramFromText (chunk-UIYA52SD.js?v=ff7207c0:18088:10)
+    at Object.parse$1 [as parse] (chunk-UIYA52SD.js?v=ff7207c0:17875:11)
+    at chunk-UIYA52SD.js?v=ff7207c0:18296:18
+    at new Promise (<anonymous>)
+    at performCall (chunk-UIYA52SD.js?v=ff7207c0:18295:31)
+renderGraph @ MermaidViewer.tsx:94
+await in renderGraph
+(anonyme) @ MermaidViewer.tsx:110
+commitHookEffectListMount @ chunk-EJTTOCY5.js?v=ff7207c0:16915
+commitPassiveMountOnFiber @ chunk-EJTTOCY5.js?v=ff7207c0:18156
+commitPassiveMountEffects_complete @ chunk-EJTTOCY5.js?v=ff7207c0:18129
+commitPassiveMountEffects_begin @ chunk-EJTTOCY5.js?v=ff7207c0:18119
+commitPassiveMountEffects @ chunk-EJTTOCY5.js?v=ff7207c0:18109
+flushPassiveEffectsImpl @ chunk-EJTTOCY5.js?v=ff7207c0:19490
+flushPassiveEffects @ chunk-EJTTOCY5.js?v=ff7207c0:19447
+commitRootImpl @ chunk-EJTTOCY5.js?v=ff7207c0:19416
+commitRoot @ chunk-EJTTOCY5.js?v=ff7207c0:19277
+performSyncWorkOnRoot @ chunk-EJTTOCY5.js?v=ff7207c0:18895
+flushSyncCallbacks @ chunk-EJTTOCY5.js?v=ff7207c0:9119
+flushSync @ chunk-EJTTOCY5.js?v=ff7207c0:18959
+finishEventHandler @ chunk-EJTTOCY5.js?v=ff7207c0:3569
+batchedUpdates @ chunk-EJTTOCY5.js?v=ff7207c0:3582
+dispatchEventForPluginEventSystem @ chunk-EJTTOCY5.js?v=ff7207c0:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-EJTTOCY5.js?v=ff7207c0:5478
+dispatchEvent @ chunk-EJTTOCY5.js?v=ff7207c0:5472
+dispatchDiscreteEvent @ chunk-EJTTOCY5.js?v=ff7207c0:5449
