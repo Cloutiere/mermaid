@@ -7,8 +7,7 @@ import type {
   SubProjectRead,
   NodeRead,
   RelationshipRead,
-  BackendHealthResponse,
-  ClassDefRead
+  BackendHealthResponse
 } from '@/types/api';
 
 // Type générique pour les payloads POST/PUT (correspondant aux schémas *Create du backend)
@@ -104,7 +103,7 @@ class ApiService {
 
   /** Récupère tous les projets. */
   public async getProjects(): Promise<ProjectRead[]> {
-    return this.get<ProjectRead[]>('/projects');
+    return this.get<ProjectRead[]>('/projects/');
   }
 
   /** Récupère un projet par ID. */
@@ -114,7 +113,7 @@ class ApiService {
 
   /** Crée un nouveau projet. */
   public async createProject(data: Omit<ProjectRead, 'id' | 'subprojects'>): Promise<ProjectRead> {
-      return this.post<ProjectRead, typeof data>('/projects', data);
+      return this.post<ProjectRead, typeof data>('/projects/', data);
   }
 
   /** Met à jour un projet existant. */
@@ -132,7 +131,7 @@ class ApiService {
   /** Récupère les subprojects. Filtre optionnel par projectId. */
   public async getSubProjects(projectId?: number): Promise<SubProjectRead[]> {
     const params = projectId ? { project_id: projectId } : undefined;
-    return this.get<SubProjectRead[]>('/subprojects', params);
+    return this.get<SubProjectRead[]>('/subprojects/', params);
   }
 
   /** Récupère un subproject par ID. */
@@ -142,7 +141,7 @@ class ApiService {
 
   /** Crée un nouveau subproject. */
   public async createSubProject(data: Omit<SubProjectRead, 'id' | 'nodes' | 'relationships' | 'class_defs'>): Promise<SubProjectRead> {
-      return this.post<SubProjectRead, typeof data>('/subprojects', data);
+      return this.post<SubProjectRead, typeof data>('/subprojects/', data);
   }
 
   // -- Nodes --
@@ -150,12 +149,12 @@ class ApiService {
   /** Récupère les nœuds. Filtre optionnel par subprojectId. */
   public async getNodes(subprojectId?: number): Promise<NodeRead[]> {
     const params = subprojectId ? { subproject_id: subprojectId } : undefined;
-    return this.get<NodeRead[]>('/nodes', params);
+    return this.get<NodeRead[]>('/nodes/', params);
   }
 
   /** Crée un nouveau nœud. */
   public async createNode(data: Omit<NodeRead, 'id'>): Promise<NodeRead> {
-      return this.post<NodeRead, typeof data>('/nodes', data);
+      return this.post<NodeRead, typeof data>('/nodes/', data);
   }
 
   /** Met à jour un nœud. */
