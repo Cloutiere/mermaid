@@ -25,6 +25,7 @@ function GraphEditorPage() {
   const [isSaving, setIsSaving] = useState(false) // Nouvel état pour la sauvegarde
   const [error, setError] = useState<string | null>(null)
   const [hasMermaidError, setHasMermaidError] = useState(false) // État pour les erreurs de rendu Mermaid
+  const [viewerKey, setViewerKey] = useState(0) // Clé pour forcer le remontage du MermaidViewer
 
   const subprojectIdNumber = subprojectId ? Number(subprojectId) : null
 
@@ -55,6 +56,18 @@ function GraphEditorPage() {
 
     fetchSubProject()
   }, [subprojectIdNumber])
+
+  // --- 2b. Force Remontage du MermaidViewer après récupération d'erreur ---
+  // Mermaid.js entre dans un état corrompu après une erreur de syntaxe.
+  // Pour nettoyer complètement cet état, on force React à recréer le composant
+  // en changeant sa clé quand on passe d'un état d'erreur à un état sans erreur.
+  useEffect(() => {
+    // Si on n'a plus d'erreur (hasMermaidError est false), on incrémente la clé
+    // pour forcer un remontage complet du composant MermaidViewer
+    if (!hasMermaidError) {
+      setViewerKey(prev => prev + 1)
+    }
+  }, [hasMermaidError])
 
   // --- 3. Logique de Détection de Changement (Dirty State) ---
   const isDirty = useMemo(() => {
@@ -189,6 +202,7 @@ function GraphEditorPage() {
            <h2 className="text-lg font-semibold text-gray-700 mb-2">Visualiseur</h2>
            <div className="flex-grow">
             <MermaidViewer 
+              key={viewerKey}
               mermaidCode={currentMermaidCode}
               onRenderStateChange={setHasMermaidError}
             />
