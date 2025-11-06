@@ -1,6 +1,5 @@
-// frontend/PLAN_DEVELOPPEMENT_FORNTEND.md.txt
 // frontend/PLAN_DEVELOPPEMENT_FRONTEND.md
-// Version 1.6 (Mise à jour post-Implémentation et Correction de l'Éditeur)
+// Version 1.8 (Mise à jour post-Export Éditeur)
 
 # Plan Détaillé de Développement Frontend
 ## Éditeur Visuel de Structure de Récit Mermaid
@@ -21,9 +20,9 @@ frontend/src/
 │   └── ConfirmDialog.tsx      # [TODO] Dialogue de confirmation
 ├── pages/
 │   ├── ProjectListPage.tsx    (MIS À JOUR) # ✅ CRUD Projet/SubProject UI implémenté
-│   └── GraphEditorPage.tsx    (MIS À JOUR) # ✅ Logique de chargement, Layout, et Détection 'isDirty' implémentés
+│   └── GraphEditorPage.tsx    (MIS À JOUR) # ✅ Logique de chargement, Layout, Édition, Visualisation, Sauvegarde et EXPORT implémentés
 ├── services/
-│   └── api.ts                  (EXISTE DÉJÀ)
+│   └── api.ts                  (EXISTE DÉJÀ) # ✅ exportMermaid ajouté
 └── types/
     └── api.ts                  (EXISTE DÉJÀ)
 ```
@@ -50,8 +49,7 @@ Construire l'interface et la logique pour éditer, visualiser, importer et expor
 #### 2.2 - Visualisation Mermaid
 ```typescript
 // À créer : components/MermaidViewer.tsx
-// Statut : ✅ TERMINÉ (Incluant la correction pour le rendu asynchrone)
-```
+// Statut : ✅ TERMINÉ (Incluant la correction pour le rendu asynchrone)```
 **Statut de 2.2 : ✅ TERMINÉ**
 
 #### 2.3 - Éditeur de Code Mermaid
@@ -67,14 +65,14 @@ Construire l'interface et la logique pour éditer, visualiser, importer et expor
 // Disposition en deux colonnes : Éditeur (Gauche) et Aperçu (Droite)
 // Boutons : Sauvegarder (avec logique isDirty), Exporter, Importer, Retour
 ```
-**Statut de 2.4 : ✅ TERMINÉ (Logique isDirty et Layout en place)**
+**Statut de 2.4 : ✅ TERMINÉ (Logique isDirty corrigée et Layout en place)**
 
 #### 2.5 - Sauvegarde (API Update)
 ```typescript
 // Fonction handleSave dans GraphEditorPage :
 // - Appelle apiService.updateSubProject(...) pour sauvegarder currentMermaidCode
 ```
-**Statut de 2.5 : 🔨 À FAIRE**
+**Statut de 2.5 : ✅ TERMINÉ**
 
 #### 2.6 - Export Mermaid
 ```typescript
@@ -82,7 +80,7 @@ Construire l'interface et la logique pour éditer, visualiser, importer et expor
 // - Appelle l'endpoint backend /api/mermaid/export/{subprojectId}
 // - Déclenche le téléchargement du fichier .mmd.
 ```
-**Statut de 2.6 : 🔨 À FAIRE**
+**Statut de 2.6 : ✅ TERMINÉ**
 
 #### 2.7 - Import Mermaid
 ```typescript
@@ -125,4 +123,5 @@ Construire l'interface et la logique pour éditer, visualiser, importer et expor
 2. [x] **Test CRUD SubProject UI** : Créer un sous-projet via `SubProjectForm` dans `ProjectCard`, vérifier la mise à jour du compteur et de la liste. Supprimer un sous-projet, vérifier la mise à jour.
 3. [x] **Test Navigation** : Vérifier que le clic sur un sous-projet mène à `GraphEditorPage` et que le chargement fonctionne (Phase 2.1).
 4. [x] **Test Éditeur de Graphe** : Modifier le code Mermaid et vérifier le rendu visuel.
-5. [ ] **Test Sauvegarde** : (À venir) Modifier le code Mermaid, déclencher la sauvegarde via l'API.
+5. [x] **Test Sauvegarde** : Modifier le code Mermaid, déclencher la sauvegarde via l'API, vérifier que `isDirty` redevient `false` et que la modification est persistante après rechargement.
+6. [x] **Test Export** : Modifier le code Mermaid, cliquer sur Exporter, vérifier que le fichier `.mmd` se télécharge et contient le code modifié (ou vide si le parsing backend ne fonctionne pas encore).

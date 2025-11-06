@@ -1,5 +1,5 @@
 // frontend/src/pages/GraphEditorPage.tsx
-// 1.4.3 (Correction critique de l'ordre des Hooks)
+// 1.5.0 (Ajout de la fonctionnalité d'exportation)
 
 import { useParams, useNavigate } from 'react-router-dom'
 import { useState, useEffect, useMemo } from 'react'
@@ -32,6 +32,7 @@ function GraphEditorPage() {
   const [currentMermaidCode, setCurrentMermaidCode] = useState<string>('')
   const [loading, setLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [isExporting, setIsExporting] = useState(false) // État pour l'exportation
   const [error, setError] = useState<string | null>(null)
   const [hasMermaidError, setHasMermaidError] = useState(false) // État pour les erreurs de rendu Mermaid
 
@@ -77,17 +78,13 @@ function GraphEditorPage() {
     return newCode !== originalCode
   }, [currentMermaidCode, subproject, loading])
 
-  // 3b. Détermination de l'activation du bouton de sauvegarde (NOUVEAU)
+  // 3b. Détermination de l'activation du bouton de sauvegarde
   const isSaveEnabled = useMemo(() => {
-    // Le bouton est activé si :
-    // 1. On n'est pas en train de sauvegarder (!isSaving)
-    // 2. Il n'y a pas d'erreur de syntaxe (!hasMermaidError)
-    // 3. Le code édité n'est pas vide (!!normalize(currentMermaidCode))
     return !isSaving && !hasMermaidError && !!normalize(currentMermaidCode);
   }, [isSaving, hasMermaidError, currentMermaidCode]);
 
-  // Déterminer la variable de désactivation finale
-  const isDisabled = !isSaveEnabled;
+  // Déterminer la variable de désactivation finale pour la sauvegarde
+  const isSaveDisabled = !isSaveEnabled;
 
   // --- 4. Rendu Conditionnel (Chargement et Erreur) - DOIT ÊTRE APRÈS TOUS LES HOOKS ---
 
@@ -99,7 +96,7 @@ function GraphEditorPage() {
     )
   }
 
-  if (error && !isSaving) { // N'affiche l'erreur pleine page que si ce n'est pas une erreur de sauvegarde
+  if (error && !isSaving && !isExporting) { // N'affiche l'erreur pleine page que si ce n'est pas une erreur d'action
     return (
       <div className="min-h-screen bg-gray-50 p-8">
         <header className="mb-8">
@@ -124,7 +121,7 @@ function GraphEditorPage() {
 
   const subProjectTitle = subproject.title || `Sous-Projet ID: ${subprojectId}`
 
-  // --- 5. Handlers d'Action : Sauvegarde ---
+  // --- 5. Handlers d'Action : Sauvegarde et Exportation ---
   const handleSave = async () => {
     if (!subproject) return
 
@@ -134,16 +131,13 @@ function GraphEditorPage() {
     const payload: SubProjectCreate = {
         project_id: subproject.project_id,
         title: subproject.title,
-        // Sauvegarde du code actuel (non normalisé)
         mermaid_definition: currentMermaidCode, 
         visual_layout: subproject.visual_layout || null,
     }
 
     try {
         const updatedData = await apiService.updateSubProject(subproject.id, payload)
-        // Met à jour l'état du sous-projet avec les données du serveur
         setSubProject(updatedData)
-        // Met à jour le code actuel avec la version du serveur (important pour réinitialiser 'isDirty' et l'état général)
         setCurrentMermaidCode(updatedData.mermaid_definition)
         console.log("Sauvegarde réussie!", updatedData)
     } catch (err) {
@@ -153,6 +147,37 @@ function GraphEditorPage() {
         setIsSaving(false)
     }
   }
+
+  const handleExport = async () => {
+    if (!subproject) return;
+
+    setIsExporting(true);
+    setError(null);
+
+    try {
+        const mermaidCodeExported = await apiService.exportMermaid(subproject.id);
+
+        const blob = new Blob([mermaidCodeExported], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+
+        const fileName = `${subproject.title.replace(/\s+/g, '_')}_export.mmd`;
+        link.href = url;
+        link.setAttribute('download', fileName);
+
+        document.body.appendChild(link);
+        link.click();
+
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+    } catch (err) {
+        console.error("Échec de l'exportation:", err);
+        setError(err instanceof Error ? err.message : "Une erreur inconnue est survenue lors de l'exportation.");
+    } finally {
+        setIsExporting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 lg:p-8 flex flex-col">
@@ -165,10 +190,10 @@ function GraphEditorPage() {
         </p>
       </header>
 
-      {/* Affichage des erreurs de sauvegarde */}
-      {error && isSaving && (
+      {/* Affichage des erreurs d'action (sauvegarde, export) */}
+      {error && (isSaving || isExporting) && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-            <strong className="font-bold">Erreur de Sauvegarde: </strong>
+            <strong className="font-bold">Erreur: </strong>
             <span className="block sm:inline">{error}</span>
         </div>
       )}
@@ -182,17 +207,21 @@ function GraphEditorPage() {
       {/* Barre d'actions */}
       <div className="mb-4 flex justify-end space-x-3">
          <button
-            disabled
-            className="px-4 py-2 bg-gray-300 text-gray-500 rounded-md text-sm font-medium cursor-not-allowed"
+            onClick={handleExport}
+            disabled={isSaving || isExporting || loading}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition ${
+              isSaving || isExporting || loading
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : 'bg-green-600 text-white hover:bg-green-700'
+            }`}
           >
-            Exporter
+            {isExporting ? 'Exportation...' : 'Exporter'}
           </button>
           <button
             onClick={handleSave}
-            // Utilise la variable isDisabled, qui est l'inverse de isSaveEnabled
-            disabled={isDisabled} 
+            disabled={isSaveDisabled} 
             className={`px-5 py-2 text-white rounded-md text-sm font-semibold transition ${
-                isDisabled
+                isSaveDisabled
                     ? 'bg-indigo-300 cursor-not-allowed'
                     : 'bg-indigo-600 hover:bg-indigo-700 cursor-pointer' 
             }`}

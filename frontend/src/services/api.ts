@@ -1,5 +1,5 @@
 // frontend/src/services/api.ts
-// Version 1.2 (Ajout de updateSubProject)
+// Version 1.3 (Ajout de exportMermaid)
 
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import type {
@@ -155,6 +155,22 @@ class ApiService {
   /** Supprime un subproject par ID. */
   public async deleteSubProject(id: number): Promise<void> {
     return this.delete(`/subprojects/${id}`);
+  }
+
+  /** Exporte le code Mermaid généré par le backend. */
+  public async exportMermaid(subprojectId: number): Promise<string> {
+    try {
+        const response: AxiosResponse<string> = await this.api.get(
+            `/mermaid/export/${subprojectId}`,
+            {
+                // Indiquer à Axios que la réponse attendue est du texte, pas du JSON
+                responseType: 'text', 
+            }
+        );
+        return response.data; // Le code Mermaid est dans data
+    } catch (error) {
+        throw this.handleError(error);
+    }
   }
 
   // -- Nodes --

@@ -1,6 +1,6 @@
 // frontend/STRUCTURE.md
 // frontend/STRUCTURE.md
-// Version 1.5 (Mise à jour post-Implémentation et Correction de l'Éditeur)
+// Version 1.6 (Mise à jour post-Sauvegarde Éditeur)
 
 # Structure du Projet - Éditeur Visuel Mermaid
 
@@ -31,7 +31,7 @@
 │   │   │   └── ConfirmDialog.tsx  # [TODO] Dialogue de confirmation
 │   │   ├── pages/             # ✅ Pages principales de l'application
 │   │   │   ├── ProjectListPage.tsx  # ✅ Liste des projets (CRUD Projet UI fonctionnel)
-│   │   │   └── GraphEditorPage.tsx  # ✅ Page Éditeur de Graphe (Layout Bi-colonne et Logique 'isDirty' implémentés)
+│   │   │   └── GraphEditorPage.tsx  # ✅ Page Éditeur de Graphe (Logique de chargement, Layout, Édition, Visualisation, et Sauvegarde implémentés)
 │   │   ├── types/             # ✅ Interfaces TypeScript pour API
 │   │   │   └── api.ts         # ✅ Types synchronisés avec Pydantic
 │   │   ├── services/          # ✅ Services frontend

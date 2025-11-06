@@ -1,12 +1,12 @@
 // frontend/CONFIGURATION_COMPLETE.md.txt
 // frontend/CONFIGURATION_COMPLETE.md
-// Version 1.3 (Mise à jour post-CRUD SubProject UI)
+// Version 1.4 (Mise à jour post-Sauvegarde Éditeur)
 
 # 🎉 Configuration Complète - Projet Éditeur Visuel Mermaid
 
 ## ✅ Configuration Terminée avec Succès
 
-Votre environnement est **100% opérationnel** pour les développements backend, et la **Phase 1 (Gestion des Projets et UI initiale des Sous-Projets)** est achevée côté frontend !
+Votre environnement est **100% opérationnel** pour les développements backend, et la **Phase 2 (Éditeur de Graphe)** est en grande partie achevée côté frontend !
 
 ---
 
@@ -113,12 +113,12 @@ frontend/
 │   │   ├── ProjectForm.tsx    # ✅ Implémenté (CRUD Projet)
 │   │   ├── SubProjectCard.tsx # ✅ Implémenté (UI SubProject)
 │   │   ├── SubProjectForm.tsx # ✅ Implémenté (UI SubProject)
-│   │   ├── MermaidViewer.tsx  # [TODO]
-│   │   ├── MermaidEditor.tsx  # [TODO]
+│   │   ├── MermaidViewer.tsx  # ✅ Implémenté (Rendu fonctionnel)
+│   │   ├── MermaidEditor.tsx  # ✅ Implémenté (Éditeur fonctionnel)
 │   │   └── ConfirmDialog.tsx  # [TODO]
 │   ├── pages/
 │   │   ├── ProjectListPage.tsx  # ✅ Liste des projets (CRUD Projet/SubProject UI fonctionnel)
-│   │   └── GraphEditorPage.tsx  # ✅ Page Éditeur de Graphe (Routage fonctionnel)
+│   │   └── GraphEditorPage.tsx  # ✅ Page Éditeur de Graphe (Layout Bi-colonne et Sauvegarde fonctionnelle)
 │   ├── types/
 │   │   └── api.ts         # ✅ Types synchronisés avec Pydantic
 │   ├── services/
@@ -128,7 +128,7 @@ frontend/
 │   ├── index.css          # ✅ Styles Tailwind
 │   └── vite-env.d.ts      # ✅ Types Vite
 ├── index.html             # ✅ Template HTML
-├── package.json           # ✅ Dépendances Node.js installées (Ajout de lucide-react nécessaire)
+├── package.json           # ✅ Dépendances Node.js installées
 ├── tsconfig.json          # ✅ Configuration TypeScript
 ├── vite.config.ts         # ✅ Configuration Vite (proxy API)
 └── tailwind.config.js     # ✅ Configuration Tailwind
@@ -139,7 +139,7 @@ frontend/
 ## 🎯 Prochaines Étapes de Développement
 
 **Backend** : 🟢 TERMINÉ.
-**Frontend** : Phase 1 (Gestion Projets/SubProjects UI) 🟢 TERMINÉE. Prochaine cible : Phase 2 (GraphEditorPage).
+**Frontend** : Phase 2 (GraphEditorPage) est presque achevée. Prochaine cible : Export/Import (Phase 2.6 et 2.7).
 
 ---
 

@@ -1,12 +1,11 @@
-# frontend/AMELIORATIONS_COMPLETEES.md
-// frontend/AMELIORATIONS_COMPLETEES.md
-// Version 1.5 (Mise à jour post-Implémentation et Correction de l'Éditeur)
+/ frontend/AMELIORATIONS_COMPLETEES.md
+// Version 1.7 (Mise à jour post-Export Éditeur)
 
 # ✅ Améliorations Complétées - [Date Actuelle]
 
 ## 🎯 Résumé Exécutif
 
-**L'éditeur de graphe (Viewer/Editor) est implémenté et la visualisation fonctionne.** Le Frontend est prêt à implémenter la logique de sauvegarde et d'interaction avec les services backend de transformation.
+**L'éditeur de graphe (Viewer/Editor) est implémenté et la logique de sauvegarde et d'exportation sont fonctionnelles.** Le Frontend est prêt pour l'importation.
 
 ---
 
@@ -20,18 +19,33 @@
 
 **Tâche** : Création des composants d'édition, de visualisation et intégration dans un layout bi-colonne, incluant la logique de détection des modifications (`isDirty`).
 **Fichiers impactés** :
-- `frontend/src/components/MermaidViewer.tsx` (Créé et corrigé)
+- `frontend/src/components/MermaidViewer.tsx` (Créé et corrigé pour asynchrone)
 - `frontend/src/components/MermaidEditor.tsx` (Créé)
-- `frontend/src/pages/GraphEditorPage.tsx` (Modification/Intégration et logique `isDirty`)
+- `frontend/src/pages/GraphEditorPage.tsx` (Intégration et correction de la logique `isDirty` par normalisation des chaînes)
 
-**Correction Critique de Rendu** : Le composant `MermaidViewer.tsx` a été mis à jour pour gérer la fonction `mermaid.render()` comme étant **asynchrone** (v1.1.0), résolvant l'erreur de rendu `[object Promise]`.
+**Statut** : ✅ TERMINÉ
+
+### 9. Implémentation de la Sauvegarde (Phase 2.5)
+
+**Tâche** : Rendre le bouton "Sauvegarder" actif et fonctionnel, appelant `apiService.updateSubProject` et gérant le retour de l'état `isSaving`.
+**Fichiers impactés** :
+- `frontend/src/pages/GraphEditorPage.tsx` (Fonction `handleSave` et logique d'activation du bouton)
+
+**Statut** : ✅ TERMINÉ
+
+### 10. Implémentation de l'Exportation (Phase 2.6)
+
+**Tâche** : Ajout de la méthode `exportMermaid` dans `api.ts` et intégration de `handleExport` dans `GraphEditorPage.tsx` pour déclencher le téléchargement du fichier `.mmd` via un appel `responseType: 'text'`.
+**Fichiers impactés** :
+- `frontend/src/services/api.ts` (Ajout de `exportMermaid`)
+- `frontend/src/pages/GraphEditorPage.tsx` (Ajout de `handleExport` et liaison UI)
+
 **Statut** : ✅ TERMINÉ
 
 ---
 
 ## 🏗️ Architecture Finale Backend (Complète - Aucun Changement)
 
-*... (Sections 1 à 6 inchangées)...*
 
 ## 🎯 État Actuel du Projet
 
@@ -42,7 +56,7 @@
 - ✅ Types API, Client API, Routage.
 - ✅ CRUD Projet UI, CRUD SubProject UI (Affichage/Création/Suppression).
 - ✅ **Composants `MermaidViewer.tsx` et `MermaidEditor.tsx` implémentés et corrigés.**
-- ✅ **Layout `GraphEditorPage.tsx` (bi-colonne) implémenté avec détection `isDirty`.**
+- ✅ **Layout `GraphEditorPage.tsx` (bi-colonne) implémenté avec Sauvegarde et Exportation fonctionnelles.**
 
 ---
 
@@ -73,7 +87,7 @@ curl -X POST http://localhost:5001/api/projects/ -H "Content-Type: application/j
 
 ## 🎊 Conclusion
 
-Le socle de l'édition visuelle est en place. Nous pouvons passer à l'interfaçage des actions (Sauvegarde, Export, Import) avec le Backend.
+Le socle de l'édition visuelle est en place. Nous devons maintenant nous concentrer sur l'implémentation du **parsing backend** (service de transformation inverse) pour que l'exportation fonctionne correctement, puis l'implémentation de l'importation Frontend.
 
 ---
 
