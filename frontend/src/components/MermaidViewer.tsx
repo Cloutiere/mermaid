@@ -26,6 +26,8 @@ const MermaidViewer: React.FC<MermaidViewerProps> = ({ mermaidCode, onRenderStat
 
   // Render the graph whenever mermaidCode changes (now handles asynchronous rendering)
   useEffect(() => {
+    console.log('MermaidViewer: useEffect triggered, code length:', mermaidCode.length)
+    
     if (!containerRef.current) {
       return
     }
@@ -54,6 +56,7 @@ const MermaidViewer: React.FC<MermaidViewerProps> = ({ mermaidCode, onRenderStat
 
         // Only update if this render is still current
         if (renderVersionRef.current === currentRenderVersion) {
+          console.log('MermaidViewer: Render SUCCESS, version:', currentRenderVersion)
           if (containerRef.current) {
             containerRef.current.innerHTML = svg
           }
@@ -61,13 +64,18 @@ const MermaidViewer: React.FC<MermaidViewerProps> = ({ mermaidCode, onRenderStat
           setRenderError(null)
           // Notify parent that render succeeded
           onRenderStateChange?.(false)
+        } else {
+          console.log('MermaidViewer: Render SUCCESS but OBSOLETE, current version:', renderVersionRef.current, 'render version:', currentRenderVersion)
         }
 
       } catch (error) {
         // Only show error if this render is still current
-        if (renderVersionRef.current !== currentRenderVersion) return
+        if (renderVersionRef.current !== currentRenderVersion) {
+          console.log('MermaidViewer: Render ERROR but OBSOLETE, ignoring')
+          return
+        }
         
-        console.error('Erreur de rendu Mermaid:', error)
+        console.error('MermaidViewer: Render ERROR, version:', currentRenderVersion, error)
         let errorMessage = 'Une erreur de syntaxe est survenue dans le code Mermaid.'
 
         // Tentative de récupérer un message d'erreur lisible
