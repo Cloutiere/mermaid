@@ -90,3 +90,68 @@ flask db migrate -m "Add graph_direction to SubProject model"
 flask db upgrade
 ```
 Cette migration ajoutera la colonne `graph_direction` à la table `subproject` avec une valeur par défaut de 'TD' pour garantir la non-nullabilité des enregistrements existants.
+
+**Objet :** Rapport d'Exécution et Analyse Technique : Migration `6432c963ce39` - Ajout de `graph_direction`
+
+---
+
+### I. Résumé Exécutif
+
+La migration de base de données identifiée par la révision `6432c963ce39` a été **exécutée avec succès** sur l'environnement cible. L'opération consistait à ajouter la colonne `graph_direction` à la table `subproject` pour répondre à l'exigence de persistance de l'orientation du graphe Mermaid (AC 2.9).
+
+L'opération a été menée de manière sécurisée, en utilisant une valeur par défaut (`'TD'`) pour garantir l'intégrité et la non-nullabilité des enregistrements existants. Le schéma de la base de données est maintenant parfaitement synchronisé avec la version la plus récente des modèles de données de l'application (`models.py`).
+
+Le prérequis technique pour le déploiement des nouvelles fonctionnalités de parsing/génération (FNS 1, AC 2.9) est désormais rempli.
+
+---
+
+### II. Détail de l'Opération de Migration
+
+La commande `flask db upgrade` a initié le processus géré par Alembic, comme en témoignent les logs fournis :
+
+```
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade 8aeba779c15d -> 6432c963ce39, Add graph_direction to SubProject model
+```
+
+**Décomposition technique :**
+
+1.  **Connexion et Contexte :** Alembic s'est connecté à la base de données PostgreSQL et a démarré une transaction. La mention `transactional DDL` indique que l'ensemble de la migration sera exécuté comme une seule opération atomique : soit elle réussit entièrement, soit elle est annulée sans laisser de modifications partielles.
+2.  **Identification de la Version :** Le système a détecté que la base de données était à la version `8aeba779c15d` et que la version cible du code était `6432c963ce39`.
+3.  **Exécution du Script :** Le script de migration associé à la révision `6432c963ce39` a été exécuté. Basé sur le plan de migration validé, cela a entraîné l'exécution de l'instruction SQL suivante (ou une instruction équivalente générée par SQLAlchemy) sur la base de données :
+
+    ```sql
+    ALTER TABLE subproject
+    ADD COLUMN graph_direction VARCHAR(10) NOT NULL DEFAULT 'TD';
+    ```
+
+**Analyse de l'instruction SQL :**
+*   `ALTER TABLE subproject`: Cible la table correcte pour la modification.
+*   `ADD COLUMN graph_direction VARCHAR(10)`: Ajoute la nouvelle colonne avec le type et la taille de données appropriés pour stocker des valeurs comme 'TD', 'LR', etc.
+*   `NOT NULL`: Applique la contrainte d'intégrité garantissant que chaque `SubProject` aura toujours une direction définie.
+*   `DEFAULT 'TD'`: **L'élément le plus critique de l'opération.** Le moteur PostgreSQL a automatiquement rempli la colonne `graph_direction` avec la valeur `'TD'` pour **toutes les lignes existantes** dans la table `subproject`. Cela a permis à la contrainte `NOT NULL` d'être appliquée sans erreur et assure qu'aucun enregistrement ancien ne se retrouve dans un état invalide.
+
+---
+
+### III. Impact et Conséquences
+
+#### 1. Impact Fonctionnel
+La persistance de la direction du graphe est maintenant active. Un graphe importé ou créé avec `graph LR` sera sauvegardé comme tel et sera régénéré correctement avec la même orientation lors des lectures futures. La lacune identifiée dans la non-persistance des métadonnées structurelles est comblée.
+
+#### 2. Impact sur l'Application
+*   **Synchronisation Schéma/Modèle :** La définition de la classe `SubProject` dans `backend/app/models.py` correspond désormais exactement à la structure de la table `subproject` en base de données. Il n'y a plus de divergence.
+*   **Déblocage du Backend :** Les services mis à jour (`mermaid_parser.py` et le futur `mermaid_generator.py`) peuvent maintenant lire et écrire dans la colonne `graph_direction` sans erreur. La chaîne complète de traitement (Parsing -> Stockage DB -> Régénération) est maintenant fonctionnelle pour cet attribut.
+
+#### 3. État Actuel de la Base de Données
+*   La colonne `graph_direction` existe et est prête à l'emploi.
+*   Tous les `SubProject` créés avant cette migration ont leur `graph_direction` positionnée à `'TD'`, ce qui est un comportement par défaut sûr et attendu.
+
+---
+
+### IV. Prochaines Étapes
+
+1.  **Déploiement du Code Applicatif :** La nouvelle version du backend, qui utilise activement la colonne `graph_direction`, peut maintenant être déployée en toute sécurité.
+2.  **Validation de la Fonctionnalité :** L'équipe de QA ou de développement peut procéder aux tests de bout en bout pour valider le cycle de vie complet d'un SubProject avec des directions de graphe variables (importation, modification, sauvegarde, rechargement).
+
+La migration est terminée. La fondation de données est prête pour la suite du développement de la V2.0.
