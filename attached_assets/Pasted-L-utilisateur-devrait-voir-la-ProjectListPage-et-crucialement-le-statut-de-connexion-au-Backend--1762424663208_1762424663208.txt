@@ -1,0 +1,20 @@
+L'utilisateur devrait voir la ProjectListPage et, crucialement, le statut de connexion au Backend.
+II. Plan de Tests de Validation Complet
+Ce plan couvre les trois domaines d'intégration principaux : Connectivité, Routage et Logique Métier.
+Phase 1 : Validation de l'Environnement et de la Connectivité
+Objectif : S'assurer que le Frontend communique correctement avec le Backend via le proxy, et que les types TypeScript sont utilisés.
+Test ID	Élément à Tester	Étapes de Vérification	Résultat Attendu
+1.1	Démarrage Backend	Lancer cd backend && python run.py.	Le serveur Flask démarre sans erreur. Le log indique Démarrage de l'application Flask en mode : development.
+1.2	Santé API (Proxy/Types)	Accéder au Frontend sur http://localhost:5000. Vérifier l'affichage dans ProjectListPage.tsx.	Le message de statut affiche : Backend Status (Health Check): Backend Flask is running. Ceci valide le proxy, la route /api/health, et le typage BackendHealthResponse.
+Phase 2 : Validation du Routage Frontend
+Objectif : S'assurer que react-router-dom est correctement configuré dans main.tsx et App.tsx et que les pages dynamiques reçoivent les bons paramètres.
+Test ID	Élément à Tester	Étapes de Vérification	Résultat Attendu
+2.1	Route Statique	Naviguer vers la racine de l'application : http://localhost:5000/.	La page ProjectListPage se charge.
+2.2	Route Dynamique	Naviguer vers une URL dynamique : http://localhost:5000/project/123/subproject/456.	La page GraphEditorPage se charge. Les paramètres affichés doivent être : ID du Projet : 123 et ID du Sous-Projet : 456.
+Phase 3 : Validation du Service Client API et CRUD Backend
+Objectif : Valider que les endpoints CRUD complexes et les services de logique métier fonctionnent, en utilisant Postman ou cURL.
+Test ID	Élément à Tester	Étapes de Vérification	Résultat Attendu
+3.1	Création Projet (CRUD)	Envoyer une requête POST à /api/projects/ avec un titre unique.	Réponse 201 Created. L'objet ProjectRead est retourné avec un id généré.
+3.2	CRUD SubProject	Créer un SubProject en utilisant l'ID du projet créé en 3.1. Envoyer une requête POST à /api/subprojects/ (avec project_id, title, mermaid_definition).	Réponse 201 Created. L'objet SubProjectRead est retourné.
+3.3	Service Mermaid Import	Envoyer une requête POST à /api/mermaid/import avec un code Mermaid valide (ex: {"code": "graph TD\n A-->B\n classDef B fill:#f9f", "project_title": "Test Import"}).	Réponse 201 Created. Le service doit créer le Project, le SubProject, les Nodes (A, B), la Relationship (A->B), et la ClassDef.
+3.4	Service Mermaid Export	Envoyer une requête GET à /api/mermaid/export/<subproject_id> (en utilisant l'ID du SubProject créé en 3.3).	Réponse 200 OK avec le code Mermaid généré correspondant aux données stockées en DB.

@@ -78,10 +78,12 @@ def create_app(config_name: str | None = None):
     from app.routes.projects import projects_bp
     from app.routes.subprojects import subprojects_bp
     from app.routes.nodes import nodes_bp
+    from app.routes.mermaid import mermaid_bp
 
     # Blueprints d'API structurés
     app.register_blueprint(projects_bp, url_prefix='/api/projects')
     app.register_blueprint(subprojects_bp, url_prefix='/api/subprojects')
     app.register_blueprint(nodes_bp, url_prefix='/api/nodes')
+    app.register_blueprint(mermaid_bp, url_prefix='/api/mermaid')
 
     return app
