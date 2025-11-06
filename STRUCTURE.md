@@ -1,6 +1,5 @@
 // frontend/STRUCTURE.md
-// frontend/STRUCTURE.md
-// Version 1.6 (Mise à jour post-Sauvegarde Éditeur)
+// Version 1.7 (Mise à jour post-Validation Backend)
 
 # Structure du Projet - Éditeur Visuel Mermaid
 
@@ -14,7 +13,9 @@
 │   │   ├── __init__.py        # ✅ Factory Pattern
 │   │   ├── schemas.py         # ✅ Schémas Pydantic pour API
 │   │   ├── routes/            # ✅ Routes API RESTful complètes (CRUD + Mermaid)
-│   │   └── services/          # ✅ Services métier critiques (CRUD + Mermaid Transform)
+│   │   └── services/          # ✅ Services métier critiques
+│   │       ├── mermaid_parser.py  # ✅ Implémenté: Logique de Parsing et Synchronisation (Code -> DB)
+│   │       └── subprojects.py     # ✅ Implémenté: Mise à jour avec intégration de la synchronisation
 │   ├── migrations/            # ✅ Flask-Migrate
 │   ├── run.py                 # ✅ Point d'entrée Flask
 │   └── requirements.txt       # ✅ Dépendances Python installées
@@ -31,7 +32,7 @@
 │   │   │   └── ConfirmDialog.tsx  # [TODO] Dialogue de confirmation
 │   │   ├── pages/             # ✅ Pages principales de l'application
 │   │   │   ├── ProjectListPage.tsx  # ✅ Liste des projets (CRUD Projet UI fonctionnel)
-│   │   │   └── GraphEditorPage.tsx  # ✅ Page Éditeur de Graphe (Logique de chargement, Layout, Édition, Visualisation, et Sauvegarde implémentés)
+│   │   │   └── GraphEditorPage.tsx  # ✅ Page Éditeur de Graphe (Logique de chargement, Layout, Édition, Visualisation, Sauvegarde et Exportation implémentés)
 │   │   ├── types/             # ✅ Interfaces TypeScript pour API
 │   │   │   └── api.ts         # ✅ Types synchronisés avec Pydantic
 │   │   ├── services/          # ✅ Services frontend

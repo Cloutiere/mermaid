@@ -1,11 +1,11 @@
-/ frontend/AMELIORATIONS_COMPLETEES.md
-// Version 1.7 (Mise à jour post-Export Éditeur)
+// frontend/AMELIORATIONS_COMPLETEES.md
+// Version 1.8 (Mise à jour post-Validation Backend)
 
 # ✅ Améliorations Complétées - [Date Actuelle]
 
 ## 🎯 Résumé Exécutif
 
-**L'éditeur de graphe (Viewer/Editor) est implémenté et la logique de sauvegarde et d'exportation sont fonctionnelles.** Le Frontend est prêt pour l'importation.
+**L'éditeur de graphe (Viewer/Editor) est implémenté et la logique de sauvegarde et d'exportation sont fonctionnelles.** L'étape critique de **Synchronisation Structurelle Backend** a été validée. Le Frontend est prêt pour l'importation.
 
 ---
 
@@ -36,27 +36,27 @@
 ### 10. Implémentation de l'Exportation (Phase 2.6)
 
 **Tâche** : Ajout de la méthode `exportMermaid` dans `api.ts` et intégration de `handleExport` dans `GraphEditorPage.tsx` pour déclencher le téléchargement du fichier `.mmd` via un appel `responseType: 'text'`.
-**Fichiers impactés** :
-- `frontend/src/services/api.ts` (Ajout de `exportMermaid`)
-- `frontend/src/pages/GraphEditorPage.tsx` (Ajout de `handleExport` et liaison UI)
-
-**Statut** : ✅ TERMINÉ
+**Statut** : ✅ TERMINÉ (Validation du fonctionnement par le backend)
 
 ---
 
-## 🏗️ Architecture Finale Backend (Complète - Aucun Changement)
+## 🏗️ Architecture Finale Backend (Complète)
 
+La logique de synchronisation structurelle (Parsing + Persistance) est désormais validée et opérationnelle dans les services `mermaid_parser.py` et `subprojects.py`. Le backend est finalisé pour le cycle complet DB $\leftrightarrow$ Code Mermaid.
+
+---
 
 ## 🎯 État Actuel du Projet
 
 ### Backend
-- ✅ Tous les services et routes API (23 endpoints fonctionnels).
+- ✅ Tous les services et routes API sont fonctionnels.
+- ✅ **Synchronisation Structurelle (Sauvegarde/Export) VALIDÉE.**
 
 ### Frontend
 - ✅ Types API, Client API, Routage.
 - ✅ CRUD Projet UI, CRUD SubProject UI (Affichage/Création/Suppression).
-- ✅ **Composants `MermaidViewer.tsx` et `MermaidEditor.tsx` implémentés et corrigés.**
-- ✅ **Layout `GraphEditorPage.tsx` (bi-colonne) implémenté avec Sauvegarde et Exportation fonctionnelles.**
+- ✅ Composants `MermaidViewer.tsx` et `MermaidEditor.tsx` implémentés.
+- ✅ Layout `GraphEditorPage.tsx` (bi-colonne) implémenté avec Sauvegarde et Exportation fonctionnelles.
 
 ---
 
@@ -87,7 +87,7 @@ curl -X POST http://localhost:5001/api/projects/ -H "Content-Type: application/j
 
 ## 🎊 Conclusion
 
-Le socle de l'édition visuelle est en place. Nous devons maintenant nous concentrer sur l'implémentation du **parsing backend** (service de transformation inverse) pour que l'exportation fonctionne correctement, puis l'implémentation de l'importation Frontend.
+La synchronisation backend est un succès majeur. La prochaine priorité est l'implémentation de l'**Importation Mermaid (Phase 2.7)** côté Frontend pour compléter le cycle d'édition.
 
 ---
 
