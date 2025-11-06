@@ -1,5 +1,5 @@
 # backend/app/schemas.py
-# Version 1.0
+# Version 1.1
 
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, ConfigDict, Field
@@ -103,3 +103,10 @@ class ProjectRead(ProjectBase):
     subprojects: List[SubProjectRead] = []
 
     model_config = ConfigDict(from_attributes=True)
+
+# --- Définitions pour l'importation de contenu ---
+
+class NodeContentImport(BaseModel):
+    """Schéma pour l'importation en masse du contenu textuel des nœuds."""
+    # Représente le JSON de la requête: { "MERMAID_ID": "Contenu Textuel", ... }
+    content_map: Dict[str, str] = Field(..., description="Map des mermaid_id aux nouveaux text_content.")

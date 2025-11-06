@@ -1,7 +1,7 @@
 # backend/app/services/mermaid_generator.py
-# Version 1.0
+# Version 1.1
 
-from typing import List
+from typing import List, Dict
 from sqlalchemy.orm import selectinload
 from werkzeug.exceptions import NotFound
 
@@ -9,7 +9,6 @@ from app import db
 from app.models import SubProject, Node, Relationship, ClassDef, LinkType
 
 # --- Constantes ---
-DEFAULT_GRAPH_DIRECTION = "TD"
 RELATIONSHIP_LINK_MAP = {
     LinkType.VISIBLE: "-->",
     LinkType.INVISIBLE: "---",
@@ -24,7 +23,7 @@ def _sanitize_title(title: str, default_id: str) -> str:
     safe_title = title.replace('"', '#quot;') 
 
     # Si le titre contient des espaces ou des caractères spéciaux, le mettre entre guillemets
-    if ' ' in title or '[' in title or ']' in title:
+    if ' ' in title or '[' in title or ']' in title or '{' in title or '}' in title:
         return f'"{safe_title}"'
 
     return safe_title
@@ -54,8 +53,8 @@ def generate_mermaid_from_subproject(subproject_id: int) -> str:
     mermaid_parts: List[str] = []
 
     # --- 2. Déclaration du type de graphe ---
-    # Pour l'instant, on utilise une direction par défaut, le parsing ne la récupère pas encore
-    mermaid_parts.append(f"graph {DEFAULT_GRAPH_DIRECTION}")
+    # Utilise la direction stockée dans la base de données
+    mermaid_parts.append(f"graph {subproject.graph_direction}")
     mermaid_parts.append("")
 
     # --- 3. Ajout des Définitions de Classe (classDef) ---
@@ -75,6 +74,7 @@ def generate_mermaid_from_subproject(subproject_id: int) -> str:
     mermaid_parts.append("%% Node Definitions")
     for node in subproject.nodes:
         # Le contenu du nœud Mermaid (le titre affiché) est pris en priorité
+        # si `title` est null, on fallback sur `text_content` qui ne devrait pas l'être.
         title = node.title if node.title is not None else node.text_content
         safe_title = _sanitize_title(title, node.mermaid_id)
 

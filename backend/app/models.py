@@ -1,4 +1,5 @@
 # backend/app/models.py
+# Version 1.1
 """
 Modèles de données pour l'éditeur visuel de structure narrative Mermaid.
 Utilise SQLAlchemy 2.0 avec typage moderne pour la compatibilité avec Flask-Migrate.
@@ -43,6 +44,7 @@ class SubProject(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
     project_id: Mapped[int] = mapped_column(ForeignKey('project.id'), nullable=False, index=True)
     title: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    graph_direction: Mapped[str] = mapped_column(String(10), nullable=False, server_default="TD", default="TD")
     mermaid_definition: Mapped[str] = mapped_column(Text, nullable=False)
     visual_layout: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
 

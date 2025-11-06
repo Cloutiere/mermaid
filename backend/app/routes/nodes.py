@@ -1,5 +1,5 @@
 # backend/app/routes/nodes.py
-# Version 1.0
+# Version 1.1
 
 from flask import Blueprint, jsonify, request
 from http import HTTPStatus
@@ -7,11 +7,12 @@ from http import HTTPStatus
 # Import service functions for Node and Relationship
 from app.services.nodes import (
     get_all_nodes, get_node_by_id, create_node, update_node, delete_node,
-    get_all_relationships, get_relationship_by_id, create_relationship, update_relationship, delete_relationship
+    get_all_relationships, get_relationship_by_id, create_relationship, update_relationship, delete_relationship,
+    import_node_content
 )
 
 # Import Pydantic schemas for validation and serialization
-from app.schemas import NodeCreate, NodeRead, RelationshipCreate, RelationshipRead
+from app.schemas import NodeCreate, NodeRead, RelationshipCreate, RelationshipRead, NodeContentImport
 
 # Création du Blueprint pour les routes liées aux Nœuds et Relations
 nodes_bp = Blueprint('nodes', __name__)
@@ -88,6 +89,29 @@ def delete_node_route(node_id: int):
 
     # Retourner 204 No Content pour une suppression réussie
     return '', HTTPStatus.NO_CONTENT
+
+# --- Route pour l'Importation de Contenu ---
+@nodes_bp.route('/import_content/<int:subproject_id>', methods=['POST'])
+def import_content(subproject_id: int):
+    """
+    Endpoint pour importer en masse le contenu textuel des nœuds pour un subproject donné.
+    """
+    if not request.is_json:
+        return jsonify({"error": "Request must be JSON"}), HTTPStatus.UNSUPPORTED_MEDIA_TYPE
+
+    data = request.get_json()
+    try:
+        # Valider les données entrantes avec le schéma NodeContentImport
+        import_schema = NodeContentImport.model_validate(data)
+    except Exception as e:
+        return jsonify({"error": "Validation Error", "details": str(e)}), HTTPStatus.BAD_REQUEST
+
+    # Appeler le service d'importation
+    report = import_node_content(subproject_id, import_schema.content_map)
+
+    # Retourner le rapport généré par le service
+    return jsonify(report), HTTPStatus.OK
+
 
 # --- Routes pour les Relations (imbriquées sous /api/nodes/relationships) ---
 

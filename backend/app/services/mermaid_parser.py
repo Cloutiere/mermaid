@@ -1,5 +1,5 @@
 # backend/app/services/mermaid_parser.py
-# Version 2.0
+# Version 2.2
 
 import re
 from typing import Dict, List, Tuple
@@ -17,20 +17,26 @@ class MermaidParsingError(BadRequest):
     pass
 
 # Note: Ces patterns sont simplifiés et se concentrent sur les structures de base des diagrammes de flux.
-GRAPH_TYPE_PATTERN = re.compile(r'^\s*(graph\s+\w+)\s*', re.IGNORECASE)
+GRAPH_TYPE_PATTERN = re.compile(r'^\s*graph\s+(\w+)\s*', re.IGNORECASE)
 CLASSDEF_PATTERN = re.compile(r'^\s*classDef\s+(\w+)\s+(.+?)\s*$', re.IGNORECASE)
-NODE_DEFINITION_PATTERN = re.compile(r'^\s*(\w+)\s*\[(.+?)\]\s*$', re.IGNORECASE)
-NODE_CLASS_PATTERN = re.compile(r'^\s*class\s+(\w+)\s+(\w+)\s*$', re.IGNORECASE)
+# Handles both A["..."] and S{{"..."}} syntax
+NODE_DEFINITION_PATTERN = re.compile(r'^\s*(\w+)\s*(?:\[(.*?)\]|\{\{(.*?)\}\})\s*$', re.IGNORECASE)
+# Handles optional semicolon at the end: class A style;
+NODE_CLASS_PATTERN = re.compile(r'^\s*class\s+(\w+)\s+(\w+)\s*;?\s*$', re.IGNORECASE)
 # Relation : Source --> Target : Label | Source --- Target : Label
-RELATIONSHIP_PATTERN = re.compile(r'^\s*(\w+)\s*([->|-]+)\s*(?:\|(.*?)\|)?\s*(\w+)\s*$', re.IGNORECASE)
+RELATIONSHIP_PATTERN = re.compile(r'^\s*(\w+)\s*--\s*(?:\|(.*?)\|)?\s*>\s*(\w+)\s*$|^\s*(\w+)\s*---\s*(?:\|(.*?)\|)?\s*(\w+)\s*$', re.IGNORECASE)
 
 
-def _get_link_type(connector: str) -> LinkType:
-    """Détermine le LinkType basé sur le connecteur Mermaid (ex: '-->', '---')."""
-    if '---' in connector:
-        return LinkType.INVISIBLE
-    # Par défaut, y compris si '-->' est utilisé
-    return LinkType.VISIBLE
+def _get_link_type(match_groups: tuple) -> Tuple[LinkType, str, str, str]:
+    """Détermine le LinkType et extrait les composants de la relation à partir des groupes de la regex."""
+    # Match pour "-->"
+    if match_groups[0] is not None:
+        source, label, target = match_groups[0:3]
+        return LinkType.VISIBLE, source, label, target
+    # Match pour "---"
+    else:
+        source, label, target = match_groups[3:6]
+        return LinkType.INVISIBLE, source, label, target
 
 def _ensure_project(title: str) -> Project:
     """Récupère un projet existant ou en crée un nouveau."""
@@ -58,15 +64,22 @@ def _find_or_create_subproject(project: Project, mermaid_code: str) -> SubProjec
 
     return subproject
 
-def _parse_mermaid_elements(mermaid_code: str) -> Tuple[Dict, Dict, List]:
+def _parse_mermaid_elements(mermaid_code: str) -> Tuple[str, Dict, Dict, List]:
     """
-    Analyse le code Mermaid pour extraire les nœuds, relations et définitions de classe.
-    Retourne les listes des éléments extraits.
+    Analyse le code Mermaid pour extraire la direction, les nœuds, relations et définitions de classe.
+    Retourne la direction du graphe et les listes des éléments extraits.
     """
     lines = mermaid_code.strip().split('\n')
+    graph_direction = "TD"  # Valeur par défaut robuste
 
-    if not lines or not GRAPH_TYPE_PATTERN.match(lines[0]):
-        raise MermaidParsingError(f"Le code Mermaid doit commencer par 'graph TD', 'graph LR', etc. Ligne 1: {lines[0] if lines else 'Vide'}")
+    if not lines:
+        raise MermaidParsingError("Le code Mermaid ne peut être vide.")
+
+    match = GRAPH_TYPE_PATTERN.match(lines[0])
+    if not match:
+        raise MermaidParsingError(f"Le code Mermaid doit commencer par 'graph TD', 'graph LR', etc. Ligne 1: {lines[0]}")
+
+    graph_direction = match.group(1).upper()
 
     nodes_data: Dict[str, Dict] = {}  # {mermaid_id: {title, text_content, style_class_ref}}
     relationships_data = [] # List[{source, target, label, link_type}]
@@ -85,11 +98,14 @@ def _parse_mermaid_elements(mermaid_code: str) -> Tuple[Dict, Dict, List]:
             classdefs_data[name.strip()] = definition.strip()
             continue
 
-        # B. Nodes definition (Ex: A[Title])
+        # B. Nodes definition (Ex: A[Title] or S{{"Title"}})
         match = NODE_DEFINITION_PATTERN.match(line)
         if match:
-            mermaid_id, title_raw = match.groups()
+            mermaid_id, title_from_brackets, title_from_braces = match.groups()
+            title_raw = title_from_brackets if title_from_brackets is not None else title_from_braces
+
             mermaid_id = mermaid_id.strip()
+            # The content from {{...}} might have extra quotes, like '"..."'
             title = title_raw.strip().strip('"')
 
             # Initialise le noeud si non vu, ou met à jour le titre
@@ -100,7 +116,7 @@ def _parse_mermaid_elements(mermaid_code: str) -> Tuple[Dict, Dict, List]:
                 nodes_data[mermaid_id]['text_content'] = title
             continue
 
-        # C. Nodes class (Ex: class A blue_box) - Application de classe aux noeuds
+        # C. Nodes class (Ex: class A blue_box;) - Application de classe aux noeuds
         match = NODE_CLASS_PATTERN.match(line)
         if match:
             mermaid_id, class_ref = match.groups()
@@ -114,14 +130,12 @@ def _parse_mermaid_elements(mermaid_code: str) -> Tuple[Dict, Dict, List]:
                 nodes_data[mermaid_id]['style_class_ref'] = class_ref
             continue
 
-        # D. Relationships (Ex: A-->B ou A--|Label|B)
+        # D. Relationships (Ex: A-->B ou A---|Label|---B)
         match = RELATIONSHIP_PATTERN.match(line)
         if match:
-            source, connector, label_raw, target = match.groups()
+            link_type, source, label_raw, target = _get_link_type(match.groups())
 
             label = label_raw.strip() if label_raw else None
-
-            link_type = _get_link_type(connector)
 
             relationships_data.append({
                 'source': source.strip(),
@@ -134,8 +148,9 @@ def _parse_mermaid_elements(mermaid_code: str) -> Tuple[Dict, Dict, List]:
             for node_id in [source.strip(), target.strip()]:
                 if node_id not in nodes_data:
                     nodes_data[node_id] = {'title': None, 'text_content': node_id, 'style_class_ref': None}
+            continue
 
-    return classdefs_data, nodes_data, relationships_data
+    return graph_direction, classdefs_data, nodes_data, relationships_data
 
 
 def synchronize_subproject_entities(subproject: SubProject, mermaid_code: str) -> None:
@@ -146,17 +161,16 @@ def synchronize_subproject_entities(subproject: SubProject, mermaid_code: str) -
     """
     subproject_id = subproject.id
 
-    # 1. Parsing du nouveau code Mermaid
-    classdefs_data, nodes_data_raw, relationships_data_raw = _parse_mermaid_elements(mermaid_code)
+    # 1. Parsing du nouveau code Mermaid pour extraire toutes les données structurelles
+    graph_direction, classdefs_data, nodes_data_raw, relationships_data_raw = _parse_mermaid_elements(mermaid_code)
+
+    # 1.5. Mettre à jour la direction du graphe sur l'objet SubProject
+    subproject.graph_direction = graph_direction
 
     # 2. Suppression des anciennes entités (dans un ordre qui respecte les FK)
-    # Utilise des requêtes de suppression en masse pour la performance.
     db.session.query(Relationship).filter_by(subproject_id=subproject_id).delete(synchronize_session='fetch')
     db.session.query(Node).filter_by(subproject_id=subproject_id).delete(synchronize_session='fetch')
     db.session.query(ClassDef).filter_by(subproject_id=subproject_id).delete(synchronize_session='fetch')
-
-    # On peut `flush` pour s'assurer que les suppressions sont prises en compte avant les insertions,
-    # bien que ce ne soit pas strictement nécessaire dans ce flux.
     db.session.flush()
 
     # Dictionnaire de mapping pour convertir les mermaid_id en id de DB
@@ -164,11 +178,7 @@ def synchronize_subproject_entities(subproject: SubProject, mermaid_code: str) -
 
     # 3. Ré-insertion des ClassDefs
     for name, definition_raw in classdefs_data.items():
-        class_def = ClassDef(
-            subproject_id=subproject_id,
-            name=name,
-            definition_raw=definition_raw
-        )
+        class_def = ClassDef(subproject_id=subproject_id, name=name, definition_raw=definition_raw)
         db.session.add(class_def)
 
     # 4. Ré-insertion des Nœuds

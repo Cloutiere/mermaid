@@ -1,13 +1,16 @@
 # backend/app/services/nodes.py
-# Version 1.0
+# Version 1.1
 
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from werkzeug.exceptions import NotFound, BadRequest
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import update
 
 from app import db
 from app.models import Node, SubProject, Relationship
-from app.schemas import NodeCreate, NodeRead, RelationshipCreate, RelationshipRead
+from app.schemas import NodeCreate, RelationshipCreate
+from app.services.mermaid_generator import generate_mermaid_from_subproject
+
 
 # --- Services pour Node ---
 
@@ -15,10 +18,6 @@ def get_all_nodes(subproject_id: Optional[int] = None) -> List[Node]:
     """Récupère tous les nœuds, optionnellement filtrés par subproject_id."""
     query = db.select(Node)
     if subproject_id is not None:
-        # Optionnel : vérifier l'existence du subproject_id avant de filtrer pour une meilleure gestion d'erreur
-        # subproject = db.session.get(SubProject, subproject_id)
-        # if subproject is None:
-        #     raise NotFound(f"SubProject with ID {subproject_id} not found.")
         query = query.where(Node.subproject_id == subproject_id)
     return list(db.session.execute(query).scalars().all())
 
@@ -33,16 +32,14 @@ def get_node_by_id(node_id: int) -> Node:
 
 def create_node(data: NodeCreate) -> Node:
     """Crée un nouveau nœud à partir des données validées."""
-    # Vérifier que le subproject_id existe
     subproject = db.session.get(SubProject, data.subproject_id)
     if subproject is None:
         raise NotFound(f"SubProject with ID {data.subproject_id} not found.")
 
-    # Si title ou text_content sont None, utiliser mermaid_id par défaut
     title = data.title if data.title is not None else data.mermaid_id
     text_content = data.text_content if data.text_content is not None else data.mermaid_id
 
-    node = Node(  # type: ignore[call-arg]
+    node = Node(
         subproject_id=data.subproject_id,
         mermaid_id=data.mermaid_id,
         title=title,
@@ -53,11 +50,9 @@ def create_node(data: NodeCreate) -> Node:
     try:
         db.session.add(node)
         db.session.commit()
-        # Refresh pour s'assurer que tous les champs calculés ou générés sont présents (ex: ID)
-        db.session.refresh(node) 
+        db.session.refresh(node)
     except IntegrityError:
         db.session.rollback()
-        # L'IntegrityError pour la contrainte unique (subproject_id, mermaid_id) sera gérée ici.
         raise BadRequest(f"Node with mermaid_id '{data.mermaid_id}' already exists in SubProject ID {data.subproject_id}.")
 
     return node
@@ -67,13 +62,11 @@ def update_node(node_id: int, data: NodeCreate) -> Node:
     """Met à jour un nœud existant. Lève 404 si non trouvé."""
     node = get_node_by_id(node_id)
 
-    # Vérifier que le nouveau subproject_id existe si changé
     if data.subproject_id != node.subproject_id:
         subproject = db.session.get(SubProject, data.subproject_id)
         if subproject is None:
             raise NotFound(f"SubProject with ID {data.subproject_id} not found.")
 
-    # Si title ou text_content sont None, utiliser mermaid_id par défaut
     title = data.title if data.title is not None else data.mermaid_id
     text_content = data.text_content if data.text_content is not None else data.mermaid_id
 
@@ -85,11 +78,9 @@ def update_node(node_id: int, data: NodeCreate) -> Node:
 
     try:
         db.session.commit()
-        # Refresh pour s'assurer que les données mises à jour sont chargées
         db.session.refresh(node)
     except IntegrityError:
         db.session.rollback()
-        # Gérer le cas où le mermaid_id change pour un ID existant dans le même SP
         raise BadRequest(f"Node with mermaid_id '{data.mermaid_id}' already exists in SubProject ID {data.subproject_id}.")
 
     return node
@@ -98,13 +89,55 @@ def update_node(node_id: int, data: NodeCreate) -> Node:
 def delete_node(node_id: int) -> bool:
     """Supprime un nœud par ID. Lève 404 si non trouvé."""
     node = get_node_by_id(node_id)
-
-    # La suppression d'un nœud devrait entraîner la suppression des relations qui lui sont associées
-    # grâce aux cascades `delete-orphan` définies dans les relations `source_relationships` et `target_relationships` de Node.
     db.session.delete(node)
     db.session.commit()
     return True
 
+def import_node_content(subproject_id: int, content_map: Dict[str, str]) -> Dict[str, Any]:
+    """
+    Importe en masse le contenu textuel pour les nœuds d'un subproject.
+    Cette opération est transactionnelle et met à jour la définition Mermaid.
+    """
+    db.session.begin()
+    try:
+        subproject = db.session.get(SubProject, subproject_id)
+        if subproject is None:
+            raise NotFound(f"SubProject with ID {subproject_id} not found.")
+
+        # Récupérer tous les nœuds concernés en une seule requête
+        nodes_to_update_query = db.select(Node).where(
+            Node.subproject_id == subproject_id,
+            Node.mermaid_id.in_(content_map.keys())
+        )
+        nodes_to_update = list(db.session.execute(nodes_to_update_query).scalars().all())
+
+        updated_ids = {node.mermaid_id for node in nodes_to_update}
+        ignored_ids = list(set(content_map.keys()) - updated_ids)
+
+        updated_count = 0
+
+        # Mettre à jour les nœuds trouvés
+        if nodes_to_update:
+            for node in nodes_to_update:
+                node.text_content = content_map[node.mermaid_id]
+            updated_count = len(nodes_to_update)
+
+        # Mettre à jour la définition Mermaid du SubProject
+        # `flush` s'assure que les modifications sont envoyées à la BD avant la génération
+        db.session.flush()
+        new_mermaid_def = generate_mermaid_from_subproject(subproject_id)
+        subproject.mermaid_definition = new_mermaid_def
+
+        db.session.commit()
+
+        return {
+            'updated_count': updated_count,
+            'ignored_ids': ignored_ids
+        }
+
+    except Exception as e:
+        db.session.rollback()
+        raise e
 
 # --- Services pour Relationship ---
 
@@ -112,10 +145,6 @@ def get_all_relationships(subproject_id: Optional[int] = None) -> List[Relations
     """Récupère toutes les relations, optionnellement filtrées par subproject_id."""
     query = db.select(Relationship)
     if subproject_id is not None:
-        # Optionnel : vérifier l'existence du subproject_id avant de filtrer
-        # subproject = db.session.get(SubProject, subproject_id)
-        # if subproject is None:
-        #     raise NotFound(f"SubProject with ID {subproject_id} not found.")
         query = query.where(Relationship.subproject_id == subproject_id)
     return list(db.session.execute(query).scalars().all())
 
@@ -130,12 +159,10 @@ def get_relationship_by_id(relationship_id: int) -> Relationship:
 
 def create_relationship(data: RelationshipCreate) -> Relationship:
     """Crée une nouvelle relation à partir des données validées."""
-    # Vérifier que le subproject_id existe
     subproject = db.session.get(SubProject, data.subproject_id)
     if subproject is None:
         raise NotFound(f"SubProject with ID {data.subproject_id} not found.")
 
-    # Vérifier que les nodes source et target existent
     source_node = db.session.get(Node, data.source_node_id)
     if source_node is None:
         raise NotFound(f"Source Node with ID {data.source_node_id} not found.")
@@ -144,17 +171,15 @@ def create_relationship(data: RelationshipCreate) -> Relationship:
     if target_node is None:
         raise NotFound(f"Target Node with ID {data.target_node_id} not found.")
 
-    # Vérifier que les nodes appartiennent au même subproject que celui spécifié pour la relation
     if source_node.subproject_id != data.subproject_id:
         raise BadRequest(f"Source Node ID {data.source_node_id} does not belong to SubProject ID {data.subproject_id}.")
     if target_node.subproject_id != data.subproject_id:
         raise BadRequest(f"Target Node ID {data.target_node_id} does not belong to SubProject ID {data.subproject_id}.")
 
-    # Vérifier que source et target ne sont pas le même nœud (si nécessaire, selon les règles métier)
     if data.source_node_id == data.target_node_id:
         raise BadRequest("Source and target nodes cannot be the same.")
 
-    relationship = Relationship(  # type: ignore[call-arg]
+    relationship = Relationship(
         subproject_id=data.subproject_id,
         source_node_id=data.source_node_id,
         target_node_id=data.target_node_id,
@@ -173,13 +198,11 @@ def update_relationship(relationship_id: int, data: RelationshipCreate) -> Relat
     """Met à jour une relation existante. Lève 404 si non trouvée."""
     relationship = get_relationship_by_id(relationship_id)
 
-    # Vérifier que le nouveau subproject_id existe s'il est changé
     if data.subproject_id != relationship.subproject_id:
         subproject = db.session.get(SubProject, data.subproject_id)
         if subproject is None:
             raise NotFound(f"SubProject with ID {data.subproject_id} not found.")
 
-    # Vérifier que les nodes source et target existent
     source_node = db.session.get(Node, data.source_node_id)
     if source_node is None:
         raise NotFound(f"Source Node with ID {data.source_node_id} not found.")
@@ -188,13 +211,11 @@ def update_relationship(relationship_id: int, data: RelationshipCreate) -> Relat
     if target_node is None:
         raise NotFound(f"Target Node with ID {data.target_node_id} not found.")
 
-    # Vérifier la cohérence du subproject pour les nœuds
     if source_node.subproject_id != data.subproject_id:
         raise BadRequest(f"Source Node ID {data.source_node_id} does not belong to SubProject ID {data.subproject_id}.")
     if target_node.subproject_id != data.subproject_id:
         raise BadRequest(f"Target Node ID {data.target_node_id} does not belong to SubProject ID {data.subproject_id}.")
 
-    # Vérifier que source et target ne sont pas le même nœud
     if data.source_node_id == data.target_node_id:
         raise BadRequest("Source and target nodes cannot be the same.")
 
