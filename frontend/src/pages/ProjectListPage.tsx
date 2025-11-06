@@ -1,5 +1,5 @@
 // frontend/src/pages/ProjectListPage.tsx
-// Version 1.2
+// Version 1.3 - Ajout de la gestion du rafraîchissement des projets
 
 import { useEffect, useState, useCallback } from 'react'
 import type { BackendHealthResponse, ProjectRead } from '../types/api'
@@ -16,7 +16,7 @@ function ProjectListPage() {
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
 
-  // 3. État pour le formulaire de création
+  // 3. État pour le formulaire de création de projet
   const [showCreateForm, setShowCreateForm] = useState<boolean>(false)
 
   // Fonction pour vérifier la santé du backend (conservation de la logique existante)
@@ -28,7 +28,7 @@ function ProjectListPage() {
       .catch(() => setBackendStatus('Backend not reachable'))
   }, [])
 
-  // Fonction pour charger la liste des projets
+  // Fonction pour charger la liste des projets (et sous-projets associés)
   const fetchProjects = useCallback(async () => {
     setLoading(true)
     setError(null)
@@ -57,7 +57,15 @@ function ProjectListPage() {
     }
   }, [fetchProjects])
 
-  // Gestion du succès de la création
+  // Fonction de mise à jour / rafraîchissement global passée aux enfants
+  const handleProjectUpdate = useCallback(() => {
+    // Cette fonction est appelée par ProjectCard après la création/suppression d'un SubProject.
+    // Elle force le rechargement de TOUS les projets pour mettre à jour les listes.
+    fetchProjects()
+  }, [fetchProjects])
+
+
+  // Gestion du succès de la création de projet
   const handleCreateSuccess = () => {
     setShowCreateForm(false)
     fetchProjects()
@@ -111,6 +119,8 @@ function ProjectListPage() {
             key={project.id}
             project={project}
             onDelete={handleDeleteProject}
+            // Nouvelle prop passée à ProjectCard
+            onProjectUpdate={handleProjectUpdate} 
           />
         ))}
       </div>

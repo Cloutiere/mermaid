@@ -1,5 +1,6 @@
 // frontend/STRUCTURE.md
-// Version 1.2 (Mise à jour post-CRUD Projet UI)
+// frontend/STRUCTURE.md
+// Version 1.3 (Mise à jour post-CRUD SubProject UI)
 
 # Structure du Projet - Éditeur Visuel Mermaid
 
@@ -21,10 +22,10 @@
 ├── frontend/
 │   ├── src/
 │   │   ├── components/        # ✅ Composants React interactifs
-│   │   │   ├── ProjectCard.tsx    # ✅ Carte pour un projet unique
+│   │   │   ├── ProjectCard.tsx    # ✅ Carte pour un projet unique (CRUD Projet + SubProject UI)
 │   │   │   ├── ProjectForm.tsx    # ✅ Formulaire de création de projet
-│   │   │   ├── SubProjectCard.tsx # [TODO] Carte pour un sous-projet
-│   │   │   ├── SubProjectForm.tsx # [TODO] Formulaire de création/édition de sous-projet
+│   │   │   ├── SubProjectCard.tsx # ✅ Carte pour un sous-projet (Implémenté)
+│   │   │   ├── SubProjectForm.tsx # ✅ Formulaire de création de sous-projet (Implémenté)
 │   │   │   ├── MermaidViewer.tsx  # [TODO] Rendu du graphe Mermaid
 │   │   │   ├── MermaidEditor.tsx  # [TODO] Éditeur de code Mermaid
 │   │   │   └── ConfirmDialog.tsx  # [TODO] Dialogue de confirmation
@@ -40,7 +41,7 @@
 │   │   ├── index.css          # ✅ Styles Tailwind
 │   │   └── vite-env.d.ts      # ✅ Types Vite
 │   ├── index.html             # ✅ Template HTML
-│   ├── package.json           # ✅ Dépendances Node.js installées
+│   ├── package.json           # ✅ Dépendances Node.js installées (Ajout de lucide-react nécessaire)
 │   ├── tsconfig.json          # ✅ Configuration TypeScript
 │   ├── vite.config.ts         # ✅ Configuration Vite (proxy API)
 │   └── tailwind.config.js     # ✅ Configuration Tailwind
@@ -57,20 +58,18 @@
 
 ### ✅ Complété (Backend & Infrastructure Frontend)
 - [x] Backend API RESTful (CRUD + Transformation Mermaid)
-- [x] Modèles SQLAlchemy et DB initialisée
-- [x] Types TypeScript API synchronisés
-- [x] Client API (Axios Wrapper)
+- [x] Modèles SQLAlchemy (Complet)
 - [x] **Routage React fonctionnel (`App.tsx`)**
-- [x] **Chargement initial des projets (`ProjectListPage.tsx`)**
+- [x] **Chargement Initial des Projets** (`ProjectListPage.tsx`)
 - [x] **Composants CRUD Projet UI** (`ProjectForm`, `ProjectCard`)
+- [x] **Composants de Gestion de Sous-Projets UI** (`SubProjectCard`, `SubProjectForm`)
 
 ### 🔨 À Développer (Composants UI React)
-Le développement se concentre maintenant sur la gestion des Sous-Projets et l'éditeur de graphe :
+Le développement se concentre maintenant sur l'éditeur de graphe :
 
-1.  **Composants de Gestion de Sous-Projets** : `SubProjectCard.tsx`, `SubProjectForm.tsx`.
-2.  **Composants d'Édition de Graphe** : `MermaidViewer.tsx`, `MermaidEditor.tsx`.
-3.  **Composants Utilitaires** : `ConfirmDialog.tsx`.
-4.  **Page d'Édition** : `GraphEditorPage.tsx` (Logique de chargement et de sauvegarde du SubProject).
+1.  **Composants d'Édition de Graphe** : `MermaidViewer.tsx`, `MermaidEditor.tsx`.
+2.  **Composants Utilitaires** : `ConfirmDialog.tsx`.
+3.  **Page d'Édition** : `GraphEditorPage.tsx` (Logique de chargement et de sauvegarde du SubProject).
 
 ## Commandes Utiles
 
@@ -82,11 +81,12 @@ python run.py
 # Démarrer le frontend (Port 5000)
 cd frontend
 npm run dev
+# NOTE: Assurez-vous que 'lucide-react' est installé (npm install lucide-react)
 ```
 
 ## Prochaines Étapes
 
-Poursuite du développement selon le plan, en se concentrant sur la gestion des `SubProject` dans `ProjectListPage` puis en attaquant la `GraphEditorPage`.
+Poursuite du développement selon le plan, en attaquant la `GraphEditorPage.tsx`.
 
 ---
 

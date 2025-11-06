@@ -1,5 +1,5 @@
 // frontend/src/services/api.ts
-// Version 1.0
+// Version 1.1
 
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import type {
@@ -7,7 +7,8 @@ import type {
   SubProjectRead,
   NodeRead,
   RelationshipRead,
-  BackendHealthResponse
+  BackendHealthResponse,
+  SubProjectCreate // Import nécessaire pour le typage des payloads
 } from '@/types/api';
 
 // Type générique pour les payloads POST/PUT (correspondant aux schémas *Create du backend)
@@ -140,8 +141,14 @@ class ApiService {
   }
 
   /** Crée un nouveau subproject. */
-  public async createSubProject(data: Omit<SubProjectRead, 'id' | 'nodes' | 'relationships' | 'class_defs'>): Promise<SubProjectRead> {
+  public async createSubProject(data: SubProjectCreate): Promise<SubProjectRead> {
+      // Le type SubProjectCreate est Omit<SubProjectRead, 'id' | 'nodes' | 'relationships' | 'class_defs'>
       return this.post<SubProjectRead, typeof data>('/subprojects/', data);
+  }
+
+  /** Supprime un subproject par ID. */
+  public async deleteSubProject(id: number): Promise<void> {
+    return this.delete(`/subprojects/${id}`);
   }
 
   // -- Nodes --
@@ -180,9 +187,6 @@ class ApiService {
   public async deleteRelationship(relationshipId: number): Promise<void> {
       return this.delete(`/nodes/relationships/${relationshipId}`);
   }
-
-  // Note: Les opérations ClassDef ne sont pas exposées via des routes dédiées dans les fichiers fournis,
-  // mais elles seraient gérées similairement si des endpoints existaient (ex: /classdefs).
 }
 
 const apiService = new ApiService();

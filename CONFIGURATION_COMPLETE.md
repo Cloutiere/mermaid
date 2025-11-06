@@ -1,11 +1,12 @@
 // frontend/CONFIGURATION_COMPLETE.md.txt
-// Version 1.2 (Mise à jour post-CRUD Projet UI)
+// frontend/CONFIGURATION_COMPLETE.md
+// Version 1.3 (Mise à jour post-CRUD SubProject UI)
 
 # 🎉 Configuration Complète - Projet Éditeur Visuel Mermaid
 
 ## ✅ Configuration Terminée avec Succès
 
-Votre environnement est **100% opérationnel** pour les développements backend, et la **Phase 1 (Gestion des Projets)** est achevée côté frontend !
+Votre environnement est **100% opérationnel** pour les développements backend, et la **Phase 1 (Gestion des Projets et UI initiale des Sous-Projets)** est achevée côté frontend !
 
 ---
 
@@ -42,8 +43,8 @@ python run.py
 ```
 Le backend est accessible sur http://localhost:5001.
 
-### Frontend (port 5000 - déjà actif via workflow)
-Le frontend tourne automatiquement. L'initialisation de base est présente, incluant le routage et la gestion des projets.
+### Frontend (port 5000)
+Le frontend tourne automatiquement. L'initialisation de base est présente, incluant le routage et la gestion des projets/sous-projets.
 ```bash
 cd frontend
 npm run dev
@@ -93,7 +94,7 @@ flask db downgrade
 backend/
 ├── run.py                  # Point d'entrée Flask (à lancer)
 ├── app/                    # Modules applicatifs Python
-│   ├── models.py          # ✅ Modèles SQLAlchemy
+│   ├── models.py          # ✅ Modèles SQLAlchemy (Complet)
 │   ├── __init__.py        # ✅ Factory Pattern
 │   ├── schemas.py         # ✅ Schémas Pydantic
 │   ├── routes/            # ✅ Routes API RESTful complètes
@@ -108,15 +109,15 @@ backend/
 frontend/
 ├── src/
 │   ├── components/        # ✅ Composants React
-│   │   ├── ProjectCard.tsx    # ✅ Implémenté (CRUD Projet)
+│   │   ├── ProjectCard.tsx    # ✅ Implémenté (CRUD Projet + SubProject UI)
 │   │   ├── ProjectForm.tsx    # ✅ Implémenté (CRUD Projet)
-│   │   ├── SubProjectCard.tsx # [TODO]
-│   │   ├── SubProjectForm.tsx # [TODO]
+│   │   ├── SubProjectCard.tsx # ✅ Implémenté (UI SubProject)
+│   │   ├── SubProjectForm.tsx # ✅ Implémenté (UI SubProject)
 │   │   ├── MermaidViewer.tsx  # [TODO]
 │   │   ├── MermaidEditor.tsx  # [TODO]
 │   │   └── ConfirmDialog.tsx  # [TODO]
-│   ├── pages/             # ✅ Pages principales de l'application
-│   │   ├── ProjectListPage.tsx  # ✅ Liste des projets (CRUD Projet UI fonctionnel)
+│   ├── pages/
+│   │   ├── ProjectListPage.tsx  # ✅ Liste des projets (CRUD Projet/SubProject UI fonctionnel)
 │   │   └── GraphEditorPage.tsx  # ✅ Page Éditeur de Graphe (Routage fonctionnel)
 │   ├── types/
 │   │   └── api.ts         # ✅ Types synchronisés avec Pydantic
@@ -127,7 +128,7 @@ frontend/
 │   ├── index.css          # ✅ Styles Tailwind
 │   └── vite-env.d.ts      # ✅ Types Vite
 ├── index.html             # ✅ Template HTML
-├── package.json           # ✅ Dépendances Node.js installées
+├── package.json           # ✅ Dépendances Node.js installées (Ajout de lucide-react nécessaire)
 ├── tsconfig.json          # ✅ Configuration TypeScript
 ├── vite.config.ts         # ✅ Configuration Vite (proxy API)
 └── tailwind.config.js     # ✅ Configuration Tailwind
@@ -137,12 +138,8 @@ frontend/
 
 ## 🎯 Prochaines Étapes de Développement
 
-### Backend (✅ TERMINÉ)
-- **Toutes les fonctionnalités API (CRUD + Transformation Mermaid) sont complètes.**
-
-### Frontend (🔨 EN COURS - Phase 1 Suite)
-1. **Phase 1.5/1.6** : Construire les composants `SubProjectCard.tsx` et `SubProjectForm.tsx` pour permettre la création et l'affichage des Sous-Projets sur la page principale.
-2. **Phase 2** : Développer `GraphEditorPage.tsx` et ses dépendances.
+**Backend** : 🟢 TERMINÉ.
+**Frontend** : Phase 1 (Gestion Projets/SubProjects UI) 🟢 TERMINÉE. Prochaine cible : Phase 2 (GraphEditorPage).
 
 ---
 
@@ -150,12 +147,3 @@ frontend/
 
 - **DDA** : `attached_assets/DDA_mermaid_1762371637525.md`
 - **Plans de développement** : `PLAN_DEVELOPPEMENT_FRONTEND.md`
-
----
-
-## ✨ Changements Importants (Récapitulatif)
-
-- ✅ **Backend** : Architecture, DB, API RESTful et services de transformation **TERMINÉS**.
-- ✅ **Frontend Phase 1.1-1.4** : Connexion API, Routage, et **CRUD Projet UI** sont **TERMINÉS**.
-
-Le focus est maintenant sur l'implémentation des composants de gestion des **Sous-Projets**.

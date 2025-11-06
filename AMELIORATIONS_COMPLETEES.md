@@ -1,18 +1,18 @@
+# frontend/AMELIORATIONS_COMPLETEES.md
 // frontend/AMELIORATIONS_COMPLETEES.md
-// Version 1.2 (Mise à jour post-CRUD Projet UI)
+// Version 1.3 (Mise à jour post-CRUD SubProject UI)
 
 # ✅ Améliorations Complétées - [Date Actuelle]
 
 ## 🎯 Résumé Exécutif
 
-**Le socle CRUD pour la gestion des Projets est entièrement implémenté et validé sur le Frontend !**
+**Le socle technique du Backend est complet, et l'interface utilisateur pour la gestion des Projets et l'initialisation des Sous-Projets est terminée !**
 
-Le backend est 100% opérationnel. Le Frontend a finalisé la première phase d'interaction UI :
-- Connexion API et routage établis.
-- **CRUD (Create, Read, Delete) pour l'entité `Project` intégré** dans `ProjectListPage.tsx` via les composants `ProjectForm.tsx` et `ProjectCard.tsx`.
-- Les mécanismes de rafraîchissement et de gestion d'état sont robustes.
+Le backend est 100% opérationnel. Le Frontend a finalisé deux étapes cruciales :
+1. **CRUD (Create, Read, Delete) pour l'entité `Project`** intégré.
+2. **Intégration de l'UI pour la gestion des `SubProject`** (création via `SubProjectForm` et affichage/suppression via `SubProjectCard`), assurant la mise à jour dynamique de la liste des projets parents.
 
-La prochaine étape majeure est la construction de l'éditeur de graphe (`GraphEditorPage`).
+La prochaine étape majeure est la construction de l'outil principal : l'éditeur de graphe (`GraphEditorPage`).
 
 ---
 
@@ -40,7 +40,7 @@ La prochaine étape majeure est la construction de l'éditeur de graphe (`GraphE
 
 ---
 
-## ✅ Infrastructure Frontend (Nouvelles Implémentations)
+## ✅ Infrastructure Frontend (Implémentations Complétées)
 
 ### 3. Configuration du Routage React
 **Tâche** : Remplacer le rendu statique de `App.tsx` par la structure de routage de `react-router-dom`.
@@ -60,21 +60,29 @@ La prochaine étape majeure est la construction de l'éditeur de graphe (`GraphE
 - `frontend/src/pages/ProjectListPage.tsx` (Intégration majeure)
 **Statut** : ✅ TERMINÉ
 
+### 6. Implémentation de l'UI de Gestion des Sous-Projets (Phase 1.5 & 1.6)
+**Tâche** : Création des composants `SubProjectCard.tsx` et `SubProjectForm.tsx` et intégration dans `ProjectCard.tsx` et `ProjectListPage.tsx` pour permettre la création et la suppression des sous-projets.
+**Fichiers impactés** :
+- `frontend/src/components/SubProjectCard.tsx` (Créé)
+- `frontend/src/components/SubProjectForm.tsx` (Créé)
+- Mise à jour de `ProjectCard.tsx` et `ProjectListPage.tsx` pour intégrer les callbacks de rafraîchissement global.
+**Statut** : ✅ TERMINÉ
+
 ---
 
 ## ✅ Fonctionnalités Critiques Implémentées (Backend - Rappel)
 
-### 6. Services CRUD SubProject & Relations 📦🔗
+### 7. Services CRUD SubProject & Relations 📦🔗
 
 - **Fichiers créés/modifiés** : `backend/app/services/subprojects.py`, `backend/app/routes/subprojects.py`
 - **Fonctionnalités** : CRUD complet pour `SubProject`, incluant validations et gestion d'erreurs.
 
-### 7. Services CRUD Node & Relationship 🔗
+### 8. Services CRUD Node & Relationship 🔗
 
 - **Fichiers créés/modifiés** : `backend/app/services/nodes.py`, `backend/app/routes/nodes.py`
 - **Fonctionnalités** : CRUD complet pour `Node` et `Relationship`, avec validations croisées (ex: appartenance au même SubProject).
 
-### 8. Services de Transformation Mermaid 🔄
+### 9. Services de Transformation Mermaid 🔄
 
 - **Fichiers créés/modifiés** : `backend/app/services/mermaid_parser.py`, `backend/app/services/mermaid_generator.py`, `backend/app/routes/mermaid.py`
 - **Fonctionnalités** :
@@ -143,6 +151,7 @@ backend/
 - ✅ **Routage et Navigation** - Configuration `react-router-dom` **TERMINÉ**
 - ✅ **Chargement Initial des Projets** (`ProjectListPage.tsx`) **TERMINÉ**
 - ✅ **CRUD Projet UI** (`ProjectForm`, `ProjectCard`) **TERMINÉ**
+- ✅ **CRUD SubProject UI (Affichage/Création/Suppression)** **TERMINÉ**
 
 ---
 
@@ -173,8 +182,15 @@ curl -X POST http://localhost:5001/api/projects/ -H "Content-Type: application/j
 
 ## 🎊 Conclusion
 
-**Le socle technique du Backend est complet et la gestion des Projets est fonctionnelle côté Frontend.** Nous pouvons désormais passer à la construction de l'outil principal : l'éditeur de graphe.
+**Le socle technique du Backend est complet et la gestion des Projets/Sous-Projets est fonctionnelle côté Frontend (UI de gestion).** Nous pouvons désormais passer à la construction de l'outil principal : l'éditeur de graphe.
 
 **Prochaines étapes recommandées** :
 1. Développer `GraphEditorPage.tsx` pour charger et afficher un `SubProject`.
 2. Intégrer les composants de visualisation (`MermaidViewer.tsx`).
+
+---
+
+## 📚 Documentation de Référence
+
+- **DDA** : `attached_assets/DDA_mermaid_1762371637525.md` (Stable)
+- **Plans de développement** : `PLAN_DEVELOPPEMENT_FRONTEND.md`

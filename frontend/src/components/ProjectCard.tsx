@@ -1,16 +1,20 @@
 // frontend/src/components/ProjectCard.tsx
-// Version 1.0
+// Version 1.1 - Intégration du CRUD des SubProjects
 
-import { useNavigate } from 'react-router-dom'
+import { useState } from 'react'
 import type { ProjectRead } from '../types/api'
+import SubProjectCard from './SubProjectCard'
+import SubProjectForm from './SubProjectForm'
+import { Plus } from 'lucide-react'
 
 interface ProjectCardProps {
   project: ProjectRead
   onDelete: (id: number) => Promise<void>
+  onProjectUpdate: () => void // Nouvelle prop pour rafraîchir la liste globale
 }
 
-function ProjectCard({ project, onDelete }: ProjectCardProps) {
-  const navigate = useNavigate()
+function ProjectCard({ project, onDelete, onProjectUpdate }: ProjectCardProps) {
+  const [showSubProjectForm, setShowSubProjectForm] = useState(false)
 
   const handleDelete = () => {
     if (window.confirm(`Êtes-vous sûr de vouloir supprimer le projet "${project.title}" et tous ses sous-projets ?`)) {
@@ -18,9 +22,10 @@ function ProjectCard({ project, onDelete }: ProjectCardProps) {
     }
   }
 
-  const handleSubProjectClick = (subprojectId: number) => {
-    // Navigation vers l'éditeur de graphe
-    navigate(`/project/${project.id}/subproject/${subprojectId}`)
+  // Gère la fin du formulaire de création/modification de SubProject
+  const handleSubProjectFormSuccess = () => {
+    setShowSubProjectForm(false)
+    onProjectUpdate() // Force le rafraîchissement de ProjectListPage pour mettre à jour la liste des subprojects.
   }
 
   return (
@@ -33,27 +38,43 @@ function ProjectCard({ project, onDelete }: ProjectCardProps) {
 
       {/* Liste des Sous-Projets */}
       <div className="flex-grow p-5 space-y-3">
-        <h4 className="text-lg font-semibold text-gray-700">Sous-Projets ({project.subprojects.length}) :</h4>
+        <div className="flex justify-between items-center mb-3">
+            <h4 className="text-lg font-semibold text-gray-700">Sous-Projets ({project.subprojects.length}) :</h4>
+            <button
+                onClick={() => setShowSubProjectForm(true)}
+                title="Ajouter un nouveau sous-projet"
+                className="p-1 text-indigo-600 hover:text-indigo-800 rounded-full hover:bg-indigo-50 transition"
+            >
+                <Plus size={20} />
+            </button>
+        </div>
 
+        {/* Affichage du Formulaire de Création */}
+        {showSubProjectForm && (
+            <div className="mb-4">
+                <SubProjectForm 
+                    projectId={project.id}
+                    onSuccess={handleSubProjectFormSuccess}
+                    onCancel={() => setShowSubProjectForm(false)}
+                />
+            </div>
+        )}
+
+        {/* Liste des Sous-Projets existants */}
         {project.subprojects.length > 0 ? (
           <ul className="space-y-2">
             {project.subprojects.map((subproject) => (
-              <li key={subproject.id} className="flex justify-between items-center">
-                <span 
-                  className="text-indigo-600 hover:text-indigo-800 font-medium cursor-pointer transition truncate"
-                  onClick={() => handleSubProjectClick(subproject.id)}
-                  title={`Ouvrir: ${subproject.title}`}
-                >
-                  {subproject.title}
-                </span>
-                <span className="text-xs text-gray-400">ID: {subproject.id}</span>
-              </li>
+              <SubProjectCard 
+                key={subproject.id}
+                subproject={subproject}
+                projectId={project.id}
+                onDeleteSuccess={onProjectUpdate} // Rafraîchit après suppression
+              />
             ))}
           </ul>
         ) : (
-          <p className="text-sm text-gray-500 italic">
-            Aucun sous-projet. <span className="text-indigo-500 font-medium cursor-pointer">Créer le premier.</span>
-            {/* L'action de création sera implémentée ultérieurement */}
+          <p className="text-sm text-gray-500 italic py-2">
+            Aucun sous-projet. Utilisez le bouton '+' ci-dessus pour en créer un.
           </p>
         )}
       </div>
