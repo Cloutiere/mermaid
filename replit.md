@@ -159,3 +159,15 @@ curl http://localhost:5001/api/health
   - `/api/subprojects` - CRUD complet (filtrage par project_id)
   - `/api/nodes` - CRUD complet (filtrage par subproject_id)
   - `/api/nodes/relationships` - CRUD complet pour les relations
+
+### 6 novembre 2025 - Revue et corrections du code utilisateur
+- ✅ **Vérification architecture** : Séparation routes/services validée
+- ✅ **Migration SQLAlchemy 2.0** : Modèles refactorisés avec `Mapped` et `mapped_column`
+- ✅ **Routes SubProjects complétées** : Implémentation CRUD complète manquante ajoutée
+- ✅ **Corrections de typage** : Annotations de type corrigées dans `config.py` et `__init__.py`
+- ✅ **Imports manquants ajoutés** : `RelationshipCreate` et `RelationshipRead` dans services/nodes.py
+- ✅ **Indentation corrigée** : Fichier services/projects.py nettoyé
+- ✅ **Toutes erreurs LSP résolues** : Passage de 29 erreurs à 0
+- ✅ **Typage moderne** : Utilisation de `str | None` au lieu de `Optional[str]`
+- ✅ **Conversions de types** : Ajout de `list()` pour Sequence → List
+- 📝 **Note** : Quelques `# type: ignore` restent pour les limitations connues de SQLAlchemy (selectinload, constructeurs dynamiques)
