@@ -1,5 +1,5 @@
 // frontend/src/services/api.ts
-// Version 1.1
+// Version 1.2 (Ajout de updateSubProject)
 
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import type {
@@ -144,6 +144,12 @@ class ApiService {
   public async createSubProject(data: SubProjectCreate): Promise<SubProjectRead> {
       // Le type SubProjectCreate est Omit<SubProjectRead, 'id' | 'nodes' | 'relationships' | 'class_defs'>
       return this.post<SubProjectRead, typeof data>('/subprojects/', data);
+  }
+
+  /** Met à jour un subproject existant. */
+  public async updateSubProject(id: number, data: SubProjectCreate): Promise<SubProjectRead> {
+      // Le type SubProjectCreate est Omit<SubProjectRead, 'id' | 'nodes' | 'relationships' | 'class_defs'>
+      return this.put<SubProjectRead, typeof data>(`/subprojects/${id}`, data);
   }
 
   /** Supprime un subproject par ID. */

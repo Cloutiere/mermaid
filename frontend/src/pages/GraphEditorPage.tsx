@@ -1,10 +1,10 @@
 // frontend/src/pages/GraphEditorPage.tsx
-// 1.2.0 (Ajout de la logique isDirty pour activer le bouton Sauvegarder)
+// 1.3.0 (Implémentation de la fonction de sauvegarde via PUT SubProject)
 
 import { useParams, useNavigate } from 'react-router-dom'
 import { useState, useEffect, useMemo } from 'react'
 import apiService from '@/services/api'
-import type { SubProjectRead } from '@/types/api'
+import type { SubProjectRead, SubProjectCreate } from '@/types/api'
 import MermaidEditor from '@/components/MermaidEditor'
 import MermaidViewer from '@/components/MermaidViewer'
 
@@ -22,6 +22,7 @@ function GraphEditorPage() {
   const [subproject, setSubProject] = useState<SubProjectRead | null>(null)
   const [currentMermaidCode, setCurrentMermaidCode] = useState<string>('')
   const [loading, setLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false) // Nouvel état pour la sauvegarde
   const [error, setError] = useState<string | null>(null)
 
   const subprojectIdNumber = subprojectId ? Number(subprojectId) : null
@@ -56,11 +57,11 @@ function GraphEditorPage() {
 
   // --- 3. Logique de Détection de Changement (Dirty State) ---
   const isDirty = useMemo(() => {
-    if (!subproject || loading) return false
+    if (!subproject || loading || isSaving) return false
 
     // Compare le code actuel avec le code chargé original
     return currentMermaidCode !== subproject.mermaid_definition
-  }, [currentMermaidCode, subproject, loading])
+  }, [currentMermaidCode, subproject, loading, isSaving])
 
   // --- 4. Rendu Conditionnel (Chargement et Erreur) ---
 
@@ -73,14 +74,14 @@ function GraphEditorPage() {
   }
 
   if (error) {
-    // ... (Code de rendu d'erreur inchangé)
+    // Affiche l'erreur de chargement ou de sauvegarde
     return (
       <div className="min-h-screen bg-gray-50 p-8">
         <header className="mb-8">
-          <h1 className="text-4xl font-extrabold text-red-700">Erreur de Chargement</h1>
+          <h1 className="text-4xl font-extrabold text-red-700">Erreur</h1>
         </header>
         <div className="bg-white p-6 rounded-xl shadow-lg border border-red-100">
-          <p className="text-red-700 font-medium">{error}</p>
+          <p className="text-red-700 font-medium">Détail: {error}</p>
           <button
             onClick={() => navigate('/')}
             className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition"
@@ -92,13 +93,44 @@ function GraphEditorPage() {
     )
   }
 
-  // Si chargé avec succès
-  const subProjectTitle = subproject?.title || `Sous-Projet ID: ${subprojectId}`
+  if (!subproject) {
+    return <div className="p-8">Sous-projet non trouvé.</div>
+  }
 
-  // --- 5. Handlers d'Action ---
-  const handleSave = () => {
-    // TODO: Implémenter l'appel API PUT pour sauvegarder currentMermaidCode
-    console.log("Sauvegarde en cours...", currentMermaidCode)
+  // Si chargé avec succès
+  const subProjectTitle = subproject.title || `Sous-Projet ID: ${subprojectId}`
+
+  // --- 5. Handlers d'Action : Sauvegarde ---
+  const handleSave = async () => {
+    if (!subproject) return
+
+    setIsSaving(true)
+    setError(null)
+
+    // Construction du payload (type SubProjectCreate)
+    const payload: SubProjectCreate = {
+        project_id: subproject.project_id,
+        title: subproject.title,
+        mermaid_definition: currentMermaidCode,
+        visual_layout: subproject.visual_layout || null, // S'assurer que visual_layout est inclus
+    }
+
+    try {
+        const updatedData = await apiService.updateSubProject(subproject.id, payload)
+
+        // Mettre à jour l'état local du subproject avec les données retournées par l'API.
+        // Cela réinitialise la base de comparaison pour isDirty.
+        setSubProject(updatedData)
+        setCurrentMermaidCode(updatedData.mermaid_definition) // S'assurer que le code affiché est le code sauvegardé
+
+        console.log("Sauvegarde réussie!", updatedData)
+
+    } catch (err) {
+        console.error("Échec de la sauvegarde:", err)
+        setError(err instanceof Error ? err.message : 'Une erreur inconnue est survenue lors de la sauvegarde.')
+    } finally {
+        setIsSaving(false)
+    }
   }
 
   return (
@@ -112,6 +144,14 @@ function GraphEditorPage() {
         </p>
       </header>
 
+      {/* Affichage des erreurs de sauvegarde */}
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+            <strong className="font-bold">Erreur de Sauvegarde: </strong>
+            <span className="block sm:inline">{error}</span>
+        </div>
+      )}
+
       {/* Barre d'actions */}
       <div className="mb-4 flex justify-end space-x-3">
          <button
@@ -122,14 +162,14 @@ function GraphEditorPage() {
           </button>
           <button
             onClick={handleSave}
-            disabled={!isDirty}
+            disabled={!isDirty || isSaving}
             className={`px-5 py-2 text-white rounded-md text-sm font-semibold transition ${
-                isDirty 
-                    ? 'bg-indigo-600 hover:bg-indigo-700 cursor-pointer' 
-                    : 'bg-indigo-300 cursor-not-allowed'
+                !isDirty || isSaving
+                    ? 'bg-indigo-300 cursor-not-allowed'
+                    : 'bg-indigo-600 hover:bg-indigo-700 cursor-pointer' 
             }`}
           >
-            Sauvegarder
+            {isSaving ? 'Sauvegarde...' : 'Sauvegarder'}
           </button>
       </div>
 
