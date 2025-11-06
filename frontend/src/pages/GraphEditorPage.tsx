@@ -1,8 +1,8 @@
 // frontend/src/pages/GraphEditorPage.tsx
-// 1.5.0 (Ajout de la fonctionnalité d'exportation)
+// 1.6.0 (Ajout de l'import et du bouton retour)
 
 import { useParams, useNavigate } from 'react-router-dom'
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import apiService from '@/services/api'
 import type { SubProjectRead, SubProjectCreate } from '@/types/api'
 import MermaidEditor from '@/components/MermaidEditor'
@@ -32,10 +32,11 @@ function GraphEditorPage() {
   const [currentMermaidCode, setCurrentMermaidCode] = useState<string>('')
   const [loading, setLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
-  const [isExporting, setIsExporting] = useState(false) // État pour l'exportation
+  const [isExporting, setIsExporting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [hasMermaidError, setHasMermaidError] = useState(false) // État pour les erreurs de rendu Mermaid
+  const [hasMermaidError, setHasMermaidError] = useState(false)
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const subprojectIdNumber = subprojectId ? Number(subprojectId) : null
 
   // --- 2. Fonction de Chargement Asynchrone (Hook useEffect) ---
@@ -52,7 +53,6 @@ function GraphEditorPage() {
       try {
         const data = await apiService.getSubProject(subprojectIdNumber)
         setSubProject(data)
-        // Initialisation du code éditable avec la définition Mermaid récupérée
         setCurrentMermaidCode(data.mermaid_definition || '') 
       } catch (err) {
         console.error('Échec du chargement du sous-projet:', err)
@@ -65,29 +65,21 @@ function GraphEditorPage() {
     fetchSubProject()
   }, [subprojectIdNumber])
 
-  // --- 3. Logique de Détection de Changement (Hooks useMemo) - DOIVENT ÊTRE AVANT LES RETOURS CONDITIONNELS ---
-
-  // 3a. Détection des changements (Dirty State)
+  // --- 3. Logique de Détection de Changement (Hooks useMemo) ---
   const isDirty = useMemo(() => {
     if (!subproject || loading) return false
-
     const originalCode = normalize(subproject.mermaid_definition);
     const newCode = normalize(currentMermaidCode);
-
-    // Compare les codes normalisés
     return newCode !== originalCode
   }, [currentMermaidCode, subproject, loading])
 
-  // 3b. Détermination de l'activation du bouton de sauvegarde
   const isSaveEnabled = useMemo(() => {
     return !isSaving && !hasMermaidError && !!normalize(currentMermaidCode);
   }, [isSaving, hasMermaidError, currentMermaidCode]);
 
-  // Déterminer la variable de désactivation finale pour la sauvegarde
   const isSaveDisabled = !isSaveEnabled;
 
-  // --- 4. Rendu Conditionnel (Chargement et Erreur) - DOIT ÊTRE APRÈS TOUS LES HOOKS ---
-
+  // --- 4. Rendu Conditionnel (Chargement et Erreur) ---
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 p-8 flex justify-center items-center">
@@ -96,7 +88,7 @@ function GraphEditorPage() {
     )
   }
 
-  if (error && !isSaving && !isExporting) { // N'affiche l'erreur pleine page que si ce n'est pas une erreur d'action
+  if (error && !isSaving && !isExporting) {
     return (
       <div className="min-h-screen bg-gray-50 p-8">
         <header className="mb-8">
@@ -121,7 +113,7 @@ function GraphEditorPage() {
 
   const subProjectTitle = subproject.title || `Sous-Projet ID: ${subprojectId}`
 
-  // --- 5. Handlers d'Action : Sauvegarde et Exportation ---
+  // --- 5. Handlers d'Action ---
   const handleSave = async () => {
     if (!subproject) return
 
@@ -179,33 +171,82 @@ function GraphEditorPage() {
     }
   };
 
+  const handleBack = () => {
+    navigate('/');
+  };
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            if (e.target?.result && typeof e.target.result === 'string') {
+                setCurrentMermaidCode(e.target.result);
+            }
+        };
+        reader.onerror = () => {
+            setError("Erreur lors de la lecture du fichier.");
+        };
+        reader.readAsText(file);
+    }
+    if (fileInputRef.current) fileInputRef.current.value = ''; 
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-4 lg:p-8 flex flex-col">
-      <header className="mb-6">
-        <h1 className="text-3xl lg:text-4xl font-extrabold text-indigo-700">
-          Éditeur : {subProjectTitle}
-        </h1>
-        <p className="text-md lg:text-lg text-gray-500">
-          ID Projet: {projectId} | ID Sous-Projet: {subprojectId}
-        </p>
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        style={{ display: 'none' }}
+        accept=".mmd,.txt"
+      />
+
+      <header className="mb-6 flex justify-between items-center">
+        <div>
+            <h1 className="text-3xl lg:text-4xl font-extrabold text-indigo-700">
+                Éditeur : {subProjectTitle}
+            </h1>
+            <p className="text-md lg:text-lg text-gray-500">
+                ID Projet: {projectId} | ID Sous-Projet: {subprojectId}
+            </p>
+        </div>
+         <button
+            onClick={handleBack}
+            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition text-sm font-medium"
+          >
+            &larr; Retour à la liste
+        </button>
       </header>
 
-      {/* Affichage des erreurs d'action (sauvegarde, export) */}
       {error && (isSaving || isExporting) && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
             <strong className="font-bold">Erreur: </strong>
             <span className="block sm:inline">{error}</span>
         </div>
       )}
-      {/* Affichage des avertissements de modification non sauvegardée */}
       {isDirty && !isSaving && !hasMermaidError && (
         <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded relative mb-4" role="alert">
             <span className="block sm:inline">Modifications non sauvegardées.</span>
         </div>
       )}
 
-      {/* Barre d'actions */}
       <div className="mb-4 flex justify-end space-x-3">
+         <button
+            onClick={handleImportClick}
+            disabled={isSaving || isExporting || loading}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition border ${
+              isSaving || isExporting || loading
+                ? 'bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed'
+                : 'bg-white text-indigo-600 border-indigo-300 hover:bg-indigo-50'
+            }`}
+          >
+            Importer (.mmd)
+          </button>
          <button
             onClick={handleExport}
             disabled={isSaving || isExporting || loading}
@@ -230,17 +271,13 @@ function GraphEditorPage() {
           </button>
       </div>
 
-      {/* Layout principal de l'éditeur */}
       <main className="flex-grow grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-200px)]">
-        {/* Colonne Gauche: Éditeur de code */}
         <div className="h-full flex flex-col">
            <h2 className="text-lg font-semibold text-gray-700 mb-2">Éditeur Mermaid</h2>
            <div className="flex-grow">
              <MermaidEditor code={currentMermaidCode} onChange={setCurrentMermaidCode} />
            </div>
         </div>
-
-        {/* Colonne Droite: Visualiseur de graphe */}
         <div className="h-full flex flex-col">
            <h2 className="text-lg font-semibold text-gray-700 mb-2">Visualiseur</h2>
            <div className="flex-grow">

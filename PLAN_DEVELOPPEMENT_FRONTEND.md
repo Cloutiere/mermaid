@@ -1,5 +1,5 @@
-// frontend/PLAN_DEVELOPPEMENT_FRONTEND.md
-// Version 1.9 (Mise à jour post-Validation Backend)
+// PLAN_DEVELOPPEMENT_FRONTEND.md
+// Version 1.9 (Finalisation de l'Éditeur)
 
 # Plan Détaillé de Développement Frontend
 ## Éditeur Visuel de Structure de Récit Mermaid
@@ -19,8 +19,8 @@ frontend/src/
 │   ├── MermaidEditor.tsx      # ✅ TERMINÉ (Éditeur de code Mermaid)
 │   └── ConfirmDialog.tsx      # [TODO] Dialogue de confirmation
 ├── pages/
-│   ├── ProjectListPage.tsx    (MIS À JOUR) # ✅ CRUD Projet/SubProject UI fonctionnel
-│   └── GraphEditorPage.tsx    (MIS À JOUR) # ✅ Logique de chargement, Layout, Édition, Visualisation, Sauvegarde et Exportation implémentés
+│   ├── ProjectListPage.tsx    (MIS À JOUR) # ✅ CRUD Projet/SubProject UI implémenté
+│   └── GraphEditorPage.tsx    (MIS À JOUR) # ✅ Toutes les fonctionnalités UI sont implémentées
 ├── services/
 │   └── api.ts                  (EXISTE DÉJÀ) # ✅ exportMermaid ajouté
 └── types/
@@ -80,7 +80,7 @@ Construire l'interface et la logique pour éditer, visualiser, importer et expor
 // - Appelle l'endpoint backend /api/mermaid/export/{subprojectId}
 // - Déclenche le téléchargement du fichier .mmd.
 ```
-**Statut de 2.6 : ✅ TERMINÉ (Fonctionnalité Validée)**
+**Statut de 2.6 : ✅ TERMINÉ**
 
 #### 2.7 - Import Mermaid
 ```typescript
@@ -88,14 +88,14 @@ Construire l'interface et la logique pour éditer, visualiser, importer et expor
 // - Lit le contenu du fichier .mmd.
 // - Met à jour l'état mermaidCode.
 ```
-**Statut de 2.7 : 🔨 À FAIRE**
+**Statut de 2.7 : ✅ TERMINÉ**
 
 #### 2.8 - Bouton Retour
 ```typescript
 // Ajouter un bouton pour revenir à la liste :
 // Utilisation de useNavigate de react-router-dom pour naviguer vers '/'
 ```
-**Statut de 2.8 : 🔨 À FAIRE**
+**Statut de 2.8 : ✅ TERMINÉ**
 
 ---
 
@@ -122,10 +122,8 @@ Construire l'interface et la logique pour éditer, visualiser, importer et expor
 1. [x] **Test CRUD Projet** : Créer, vérifier l'apparition, supprimer.
 2. [x] **Test CRUD SubProject UI** : Créer un sous-projet via `SubProjectForm` dans `ProjectCard`, vérifier la mise à jour du compteur et de la liste. Supprimer un sous-projet, vérifier la mise à jour.
 3. [x] **Test Navigation** : Vérifier que le clic sur un sous-projet mène à `GraphEditorPage` et que le chargement fonctionne (Phase 2.1).
-4. [x] **Test Éditeur de Graphe** : Modifier le code Mermaid et vérifier le rendu visuel.
-5. [x] **Test Sauvegarde** : Modifier le code Mermaid, déclencher la sauvegarde via l'API, vérifier que `isDirty` redevient `false` et que la modification est persistante après rechargement.
-6. [x] **Test Export** : Modifier le code Mermaid, cliquer sur Exporter, vérifier que le fichier `.mmd` se télécharge et contient le code modifié.
-
-## ➡️ Prochaine Tâche
-
-L'implémentation de la fonctionnalité d'Importation Mermaid (Phase 2.7) est la prochaine étape critique.
+4. [x] **Test Bouton Retour** : Depuis `GraphEditorPage`, cliquer sur "Retour à la liste" et vérifier le retour à la page d'accueil.
+5. [x] **Test Éditeur de Graphe** : Modifier le code Mermaid et vérifier le rendu visuel.
+6. [x] **Test Sauvegarde** : Modifier le code, sauvegarder, vérifier que `isDirty` devient `false`, recharger et s'assurer que la modification est persistante.
+7. [x] **Test Export** : Cliquer sur Exporter, vérifier que le fichier `.mmd` se télécharge avec le bon contenu.
+8. [x] **Test Import** : Cliquer sur Importer, choisir un fichier `.mmd` local, vérifier que l'éditeur et le visualiseur se mettent à jour, et que l'état `isDirty` devient `true`.
