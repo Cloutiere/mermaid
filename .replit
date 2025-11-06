@@ -35,6 +35,10 @@ externalPort = 80
 localPort = 5001
 externalPort = 3000
 
+[[ports]]
+localPort = 35911
+externalPort = 3001
+
 [nix]
 channel = "stable-25_05"
 packages = ["tree"]
