@@ -1,5 +1,5 @@
 // frontend/src/pages/GraphEditorPage.tsx
-// 1.3.0 (Implémentation de la fonction de sauvegarde via PUT SubProject)
+// 1.4.0 (Nettoyage de la logique de contournement 'viewerKey')
 
 import { useParams, useNavigate } from 'react-router-dom'
 import { useState, useEffect, useMemo } from 'react'
@@ -22,10 +22,12 @@ function GraphEditorPage() {
   const [subproject, setSubProject] = useState<SubProjectRead | null>(null)
   const [currentMermaidCode, setCurrentMermaidCode] = useState<string>('')
   const [loading, setLoading] = useState(true)
-  const [isSaving, setIsSaving] = useState(false) // Nouvel état pour la sauvegarde
+  const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [hasMermaidError, setHasMermaidError] = useState(false) // État pour les erreurs de rendu Mermaid
-  const [viewerKey, setViewerKey] = useState(0) // Clé pour forcer le remontage du MermaidViewer
+
+  // SUPPRIMÉ : l'état viewerKey et son useEffect associé ne sont plus nécessaires.
+  // const [viewerKey, setViewerKey] = useState(0)
 
   const subprojectIdNumber = subprojectId ? Number(subprojectId) : null
 
@@ -44,7 +46,6 @@ function GraphEditorPage() {
         const data = await apiService.getSubProject(subprojectIdNumber)
         setSubProject(data)
         // Initialisation du code éditable avec la définition Mermaid récupérée
-        // Cette valeur sert de base de comparaison pour l'état "dirty"
         setCurrentMermaidCode(data.mermaid_definition || '') 
       } catch (err) {
         console.error('Échec du chargement du sous-projet:', err)
@@ -57,22 +58,12 @@ function GraphEditorPage() {
     fetchSubProject()
   }, [subprojectIdNumber])
 
-  // --- 2b. Force Remontage du MermaidViewer après récupération d'erreur ---
-  // Mermaid.js entre dans un état corrompu après une erreur de syntaxe.
-  // Pour nettoyer complètement cet état, on force React à recréer le composant
-  // en changeant sa clé quand on passe d'un état d'erreur à un état sans erreur.
-  useEffect(() => {
-    // Si on n'a plus d'erreur (hasMermaidError est false), on incrémente la clé
-    // pour forcer un remontage complet du composant MermaidViewer
-    if (!hasMermaidError) {
-      setViewerKey(prev => prev + 1)
-    }
-  }, [hasMermaidError])
+  // SUPPRIMÉ : le useEffect pour forcer le remontage n'est plus utile.
+  // Le nouveau MermaidViewer gère son état interne de manière robuste.
 
   // --- 3. Logique de Détection de Changement (Dirty State) ---
   const isDirty = useMemo(() => {
     if (!subproject || loading) return false
-
     // Compare le code actuel avec le code chargé original
     return currentMermaidCode !== subproject.mermaid_definition
   }, [currentMermaidCode, subproject, loading])
@@ -87,8 +78,7 @@ function GraphEditorPage() {
     )
   }
 
-  if (error) {
-    // Affiche l'erreur de chargement ou de sauvegarde
+  if (error && !isSaving) { // N'affiche l'erreur pleine page que si ce n'est pas une erreur de sauvegarde
     return (
       <div className="min-h-screen bg-gray-50 p-8">
         <header className="mb-8">
@@ -111,7 +101,6 @@ function GraphEditorPage() {
     return <div className="p-8">Sous-projet non trouvé.</div>
   }
 
-  // Si chargé avec succès
   const subProjectTitle = subproject.title || `Sous-Projet ID: ${subprojectId}`
 
   // --- 5. Handlers d'Action : Sauvegarde ---
@@ -121,24 +110,18 @@ function GraphEditorPage() {
     setIsSaving(true)
     setError(null)
 
-    // Construction du payload (type SubProjectCreate)
     const payload: SubProjectCreate = {
         project_id: subproject.project_id,
         title: subproject.title,
         mermaid_definition: currentMermaidCode,
-        visual_layout: subproject.visual_layout || null, // S'assurer que visual_layout est inclus
+        visual_layout: subproject.visual_layout || null,
     }
 
     try {
         const updatedData = await apiService.updateSubProject(subproject.id, payload)
-
-        // Mettre à jour l'état local du subproject avec les données retournées par l'API.
-        // Cela réinitialise la base de comparaison pour isDirty.
         setSubProject(updatedData)
-        setCurrentMermaidCode(updatedData.mermaid_definition) // S'assurer que le code affiché est le code sauvegardé
-
+        setCurrentMermaidCode(updatedData.mermaid_definition)
         console.log("Sauvegarde réussie!", updatedData)
-
     } catch (err) {
         console.error("Échec de la sauvegarde:", err)
         setError(err instanceof Error ? err.message : 'Une erreur inconnue est survenue lors de la sauvegarde.')
@@ -159,7 +142,7 @@ function GraphEditorPage() {
       </header>
 
       {/* Affichage des erreurs de sauvegarde */}
-      {error && (
+      {error && isSaving && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
             <strong className="font-bold">Erreur de Sauvegarde: </strong>
             <span className="block sm:inline">{error}</span>
@@ -169,7 +152,7 @@ function GraphEditorPage() {
       {/* Barre d'actions */}
       <div className="mb-4 flex justify-end space-x-3">
          <button
-            disabled // L'export nécessite une logique backend/API dédiée, laissé désactivé.
+            disabled
             className="px-4 py-2 bg-gray-300 text-gray-500 rounded-md text-sm font-medium cursor-not-allowed"
           >
             Exporter
@@ -202,7 +185,7 @@ function GraphEditorPage() {
            <h2 className="text-lg font-semibold text-gray-700 mb-2">Visualiseur</h2>
            <div className="flex-grow">
             <MermaidViewer 
-              key={viewerKey}
+              // SUPPRIMÉ: la prop `key` n'est plus nécessaire.
               mermaidCode={currentMermaidCode}
               onRenderStateChange={setHasMermaidError}
             />

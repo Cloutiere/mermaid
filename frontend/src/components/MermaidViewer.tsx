@@ -1,8 +1,9 @@
 // frontend/src/components/MermaidViewer.tsx
-// 1.1.0 (Correction: Rendu asynchrone de mermaid.js)
+// 1.2.0 (Stratégie de Hard Reset)
 
-import { useEffect, useRef, useState } from 'react'
-import mermaid from 'mermaid'
+import { useEffect, useRef } from 'react'
+// `mermaid` livre ses propres types à partir de la v10. L'import `type` est conforme à `verbatimModuleSyntax`.
+import type { Mermaid } from 'mermaid'
 
 // Props interface
 interface MermaidViewerProps {
@@ -12,125 +13,93 @@ interface MermaidViewerProps {
 
 const MermaidViewer: React.FC<MermaidViewerProps> = ({ mermaidCode, onRenderStateChange }) => {
   const containerRef = useRef<HTMLDivElement>(null)
-  const [renderError, setRenderError] = useState<string | null>(null)
-  const renderVersionRef = useRef(0)
+  const renderVersionRef = useRef(0) // Pour gérer les race conditions lors des changements rapides du code
 
-  // Initialize Mermaid.js once on component mount
   useEffect(() => {
-    mermaid.initialize({
-      startOnLoad: false,
-      theme: 'default',
-      securityLevel: 'loose', // Allows for more complex interactions if needed later
-    })
-  }, []) // Empty dependency array ensures this runs only once
-
-  // Render the graph whenever mermaidCode changes (now handles asynchronous rendering)
-  useEffect(() => {
-    console.log('MermaidViewer: useEffect triggered, code length:', mermaidCode.length)
-    
-    if (!containerRef.current) {
-      return
-    }
-
-    // Increment render version to invalidate previous renders
-    renderVersionRef.current += 1
-    const currentRenderVersion = renderVersionRef.current
-
-    // Clear previous content and error
-    containerRef.current.innerHTML = ''
-    setRenderError(null)
-
-    if (!mermaidCode || mermaidCode.trim() === '') {
-      containerRef.current.innerHTML = '<p class="text-gray-400 text-center p-8">Le graphe apparaîtra ici.</p>'
-      return
-    }
-
+    // Cet effet se déclenche à chaque modification du code Mermaid.
     const renderGraph = async () => {
+      if (!containerRef.current) {
+        return
+      }
+
+      // Incrémente la version pour invalider les rendus asynchrones précédents qui pourraient se terminer plus tard.
+      renderVersionRef.current += 1
+      const currentRenderVersion = renderVersionRef.current
+
+      // Efface le contenu précédent
+      containerRef.current.innerHTML = ''
+
+      if (!mermaidCode || mermaidCode.trim() === '') {
+        containerRef.current.innerHTML = '<p class="text-gray-400 text-center p-8">Le graphe apparaîtra ici.</p>'
+        onRenderStateChange?.(false) // Un code vide n'est pas un état d'erreur
+        return
+      }
+
       try {
-        // CRITICAL: Re-initialize Mermaid to clear any corrupted internal state from previous errors
+        // --- STRATÉGIE DE HARD RESET ---
+        // 1. Supprime l'instance globale potentiellement corrompue attachée à `window`.
+        delete (window as any).mermaid
+
+        // 2. Importe dynamiquement une nouvelle instance propre du module mermaid.
+        const mermaid: Mermaid = (await import('mermaid')).default
+
+        // 3. Initialise la nouvelle instance avec notre configuration.
         mermaid.initialize({
           startOnLoad: false,
           theme: 'default',
           securityLevel: 'loose',
         })
 
-        // CRITICAL: Validate syntax BEFORE rendering to avoid corrupting Mermaid's state
-        try {
-          await mermaid.parse(mermaidCode)
-          console.log('MermaidViewer: Syntax validation PASSED')
-        } catch (parseError) {
-          console.log('MermaidViewer: Syntax validation FAILED')
-          throw parseError // Re-throw to be caught by outer catch
-        }
+        // 4. Valide la syntaxe avant de tenter le rendu. Cela lève une erreur détaillée en cas d'échec.
+        await mermaid.parse(mermaidCode)
 
-        // Generate a unique ID for each render to avoid conflicts
-        const graphId = `mermaid-graph-${Date.now()}-${Math.random().toString(36).substring(7)}`
-
-        // ATTENTION: mermaid.render est ASYNCHRONE et retourne une Promesse.
-        // Nous devons utiliser await pour récupérer le code SVG et le bindage.
+        // 5. Génère le SVG du graphe.
+        const graphId = `mermaid-graph-${Date.now()}`
         const { svg } = await mermaid.render(graphId, mermaidCode)
 
-        // Only update if this render is still current
-        if (renderVersionRef.current === currentRenderVersion) {
-          console.log('MermaidViewer: Render SUCCESS, version:', currentRenderVersion)
-          if (containerRef.current) {
-            containerRef.current.innerHTML = svg
-          }
-          // Clear any previous error on successful render
-          setRenderError(null)
-          // Notify parent that render succeeded
-          onRenderStateChange?.(false)
-        } else {
-          console.log('MermaidViewer: Render SUCCESS but OBSOLETE, current version:', renderVersionRef.current, 'render version:', currentRenderVersion)
+        // Met à jour le DOM uniquement si c'est la tentative de rendu la plus récente.
+        if (renderVersionRef.current === currentRenderVersion && containerRef.current) {
+          containerRef.current.innerHTML = svg
+          onRenderStateChange?.(false) // Notifie le parent du succès du rendu
         }
-
       } catch (error) {
-        // Only show error if this render is still current
-        if (renderVersionRef.current !== currentRenderVersion) {
-          console.log('MermaidViewer: Render ERROR but OBSOLETE, ignoring')
-          return
+        // Affiche l'erreur uniquement si elle provient de la tentative de rendu la plus récente.
+        if (renderVersionRef.current !== currentRenderVersion || !containerRef.current) {
+          return // Un ancien rendu a échoué, mais un nouveau est en cours. On ignore.
         }
-        
-        console.error('MermaidViewer: Render ERROR, version:', currentRenderVersion, error)
-        let errorMessage = 'Une erreur de syntaxe est survenue dans le code Mermaid.'
 
-        // Tentative de récupérer un message d'erreur lisible
+        console.error('Erreur de Rendu Mermaid:', error)
+
+        let errorMessage = 'Une erreur de syntaxe est survenue dans le code Mermaid.'
         if (error instanceof Error) {
-            // Dans certaines versions, l'erreur de mermaid est encapsulée ou formatée étrangement
-            errorMessage = error.message.includes('</style>') 
-                ? error.message.split('</style>')[1]?.trim() || error.message
-                : error.message
+          // Tente d'extraire un message plus lisible de l'erreur de Mermaid.
+          errorMessage = error.message.includes('</style>')
+            ? error.message.split('</style>')[1]?.trim() || error.message
+            : error.message
         }
-        setRenderError(errorMessage)
-        // Notify parent that render failed
-        onRenderStateChange?.(true)
+
+        // Affiche le message d'erreur directement dans le conteneur.
+        // Utilisation d'un template literal pour une structure HTML propre pour le message d'erreur.
+        containerRef.current.innerHTML = `
+          <div class="p-4 bg-red-50 border-l-4 border-red-500 text-red-800">
+            <h3 class="font-bold">Erreur de Rendu Mermaid</h3>
+            <pre class="mt-2 text-sm whitespace-pre-wrap font-mono bg-red-100 p-2 rounded">${errorMessage.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+          </div>
+        ` // Échappement des caractères HTML dans le message d'erreur par sécurité.
+        onRenderStateChange?.(true) // Notifie le parent de l'échec du rendu
       }
     }
 
     renderGraph()
 
-    // Cleanup function
-    return () => {
-      if (containerRef.current) {
-        containerRef.current.innerHTML = ''
-      }
-    }
+    // Aucune fonction de nettoyage n'est nécessaire car on vide `innerHTML` manuellement au début de l'effet.
+  }, [mermaidCode, onRenderStateChange])
 
-  }, [mermaidCode])
-
+  // Le composant rend désormais un simple conteneur.
+  // Son contenu est entièrement géré par le hook `useEffect` via une manipulation directe du DOM.
   return (
     <div className="w-full h-full p-4 border border-gray-200 rounded-lg bg-white shadow-sm overflow-auto">
-      {renderError ? (
-        <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-800">
-          <h3 className="font-bold">Erreur de Rendu Mermaid</h3>
-          <pre className="mt-2 text-sm whitespace-pre-wrap font-mono bg-red-100 p-2 rounded">
-            {renderError}
-          </pre>
-        </div>
-      ) : (
-        // Le conteneur doit être géré en flex pour centrer le SVG si nécessaire
         <div ref={containerRef} className="mermaid-container flex justify-center items-center h-full w-full" />
-      )}
     </div>
   )
 }
