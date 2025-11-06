@@ -8,30 +8,6 @@ Application fullstack pour l'édition de graphes narratifs utilisant Mermaid, av
 - **Frontend**: React/TypeScript + Vite + Tailwind CSS + Mermaid.js
 - **Base de données**: PostgreSQL (fournie par Replit)
 
-## Structure du Projet
-
-```
-/
-├── backend/                 # Backend Python/Flask
-│   ├── app/                # Code applicatif (à développer)
-│   ├── requirements.txt    # Dépendances Python
-│   └── .flaskenv          # Configuration Flask
-│
-├── frontend/               # Frontend React/TypeScript
-│   ├── src/               # Code source React (à développer)
-│   ├── index.html         # Point d'entrée HTML
-│   ├── package.json       # Dépendances Node.js
-│   ├── tsconfig.json      # Configuration TypeScript
-│   ├── vite.config.ts     # Configuration Vite
-│   ├── tailwind.config.js # Configuration Tailwind
-│   └── postcss.config.js  # Configuration PostCSS
-│
-├── .env.example           # Template des variables d'environnement
-├── .gitignore            # Fichiers à ignorer par Git
-└── README.md             # Ce fichier
-
-```
-
 ## Modèle de Données (selon DDA)
 
 ### Tables principales:
@@ -81,7 +57,7 @@ npm run dev
 
 Le frontend proxy les appels `/api` vers `http://localhost:5001`.
 
-## Services Critiques à Implémenter
+## Services Critiques Implémentés (V1.0)
 
 Selon le Document de Décision d'Architecture (DDA):
 
@@ -111,13 +87,54 @@ UI (React) → Requête API → Backend Flask → SQLAlchemy → PostgreSQL
                            UI (Mermaid.js render)
 ```
 
-## Références
+## 📁 Structure du Projet (Détail V1.0)
 
-- **DDA**: `attached_assets/DDA_mermaid_1762371637525.md`
-- **Modèles**: `attached_assets/backendappmodels.py_1762371637524.txt`
-- Documentation Mermaid: https://mermaid.js.org/
-- Documentation Flask: https://flask.palletsprojects.com/
-- Documentation React: https://react.dev/
+```
+/
+├── backend/                    # Backend Python/Flask (Architecture complète - Voir DDA.md)
+│   ├── app/                    # Modules applicatifs Python
+│   │   ├── models.py          # ✅ Modèles SQLAlchemy (Project, SubProject, Node, Relationship, ClassDef)
+│   │   ├── __init__.py        # ✅ Factory Pattern
+│   │   ├── schemas.py         # ✅ Schémas Pydantic pour API
+│   │   ├── routes/            # ✅ Routes API RESTful complètes (CRUD + Mermaid)
+│   │   └── services/          # ✅ Services métier critiques (CRUD + Mermaid Transform)
+│   ├── migrations/            # ✅ Flask-Migrate
+│   ├── run.py                 # ✅ Point d'entrée Flask
+│   └── requirements.txt       # ✅ Dépendances Python installées
+│
+├── frontend/
+│   ├── src/
+│   │   ├── components/        # ✅ Composants React interactifs
+│   │   │   ├── ProjectCard.tsx    # ✅ Carte pour un projet unique (CRUD Projet + SubProject UI)
+│   │   │   ├── ProjectForm.tsx    # ✅ Formulaire de création de projet
+│   │   │   ├── SubProjectCard.tsx # ✅ Carte pour un sous-projet (Implémenté)
+│   │   │   ├── SubProjectForm.tsx # ✅ Formulaire de création de sous-projet (Implémenté)
+│   │   │   ├── MermaidViewer.tsx  # ✅ TERMINÉ (Rendu du graphe Mermaid, Corrigé pour l'asynchrone)
+│   │   │   ├── MermaidEditor.tsx  # ✅ TERMINÉ (Éditeur de code Mermaid)
+│   │   │   └── ConfirmDialog.tsx  # ✅ TERMINÉ (Dialogue de confirmation)
+│   │   ├── pages/             # ✅ Pages principales de l'application
+│   │   │   ├── ProjectListPage.tsx  # ✅ Liste des projets (CRUD Projet UI fonctionnel)
+│   │   │   └── GraphEditorPage.tsx  # ✅ TERMINÉ (Éditeur de Graphe : Chargement, Layout, Édition, Visualisation, Sauvegarde, Export, Import, Navigation)
+│   │   ├── types/             # ✅ Interfaces TypeScript pour API
+│   │   │   └── api.ts         # ✅ Types synchronisés avec Pydantic
+│   │   ├── services/          # ✅ Services frontend
+│   │   │   └── api.ts         # ✅ Client API (axios Wrapper)
+│   │   ├── App.tsx            # ✅ Composant racine (configuration du routage)
+│   │   ├── main.tsx           # ✅ Point d'entrée React (avec BrowserRouter)
+│   │   ├── index.css          # ✅ Styles Tailwind
+│   │   └── vite-env.d.ts      # ✅ Types Vite
+│   ├── index.html             # ✅ Template HTML
+│   ├── package.json           # ✅ Dépendances Node.js installées
+│   ├── tsconfig.json          # ✅ Configuration TypeScript
+│   ├── vite.config.ts         # ✅ Configuration Vite (proxy API)
+│   └── tailwind.config.js     # ✅ Configuration Tailwind
+│
+├── attached_assets/           # Documents de référence
+│
+├── .env.example               # ✅ Template variables d'environnement
+├── .gitignore                 # ✅ Configuration Git
+└── README.md                  # ✅ Ce fichier
+```
 
 ## Notes Importantes
 
@@ -125,3 +142,10 @@ UI (React) → Requête API → Backend Flask → SQLAlchemy → PostgreSQL
 - Le code Mermaid est un **artefact généré** à partir des tables
 - Les métadonnées visuelles sont stockées en JSON dans `SubProject.visual_layout`
 - Synchronisation stricte requise entre schémas Pydantic (Python) et interfaces TypeScript
+
+## Références
+
+- **DDA V1.0**: `DDA_mermaid_V1.0.md` (Nom à modifier)
+- Documentation Mermaid: https://mermaid.js.org/
+- Documentation Flask: https://flask.palletsprojects.com/
+- Documentation React: https://react.dev/
