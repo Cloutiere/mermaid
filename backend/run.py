@@ -18,4 +18,4 @@ if __name__ == '__main__':
     # L'hôte et le port peuvent être configurés via des variables d'environnement (ex: FLASK_RUN_HOST, FLASK_RUN_PORT)
     # ou directement ici si nécessaire. Pour une utilisation en production, un serveur WSGI comme Gunicorn est recommandé.
     print(f"Démarrage de l'application Flask en mode : {config_name}")
-    app.run()
+    app.run(host='0.0.0.0', port=5001, debug=True)

@@ -50,21 +50,24 @@ class ProductionConfig(BaseConfig):
     """Configuration pour l'environnement de production."""
     DEBUG = False
     TESTING = False
-    # Assurez-vous que DATABASE_URL est correctement configurée dans l'environnement de production
-    # Exemple: DATABASE_URL="postgresql://user:password@prod-db.example.com:5432/narrative_editor"
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
-    if not SQLALCHEMY_DATABASE_URI:
-        raise ValueError("DATABASE_URL doit être définie en mode production.")
+    
+    def __init__(self):
+        super().__init__()
+        # Assurez-vous que DATABASE_URL est correctement configurée dans l'environnement de production
+        # Exemple: DATABASE_URL="postgresql://user:password@prod-db.example.com:5432/narrative_editor"
+        self.SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
+        if not self.SQLALCHEMY_DATABASE_URI:
+            raise ValueError("DATABASE_URL doit être définie en mode production.")
 
-    # La clé secrète est CRUCIALE en production
-    SECRET_KEY = os.environ.get('SECRET_KEY')
-    if not SECRET_KEY:
-        raise ValueError("SECRET_KEY doit être définie en mode production.")
+        # La clé secrète est CRUCIALE en production
+        self.SECRET_KEY = os.environ.get('SECRET_KEY')
+        if not self.SECRET_KEY:
+            raise ValueError("SECRET_KEY doit être définie en mode production.")
 
-    # FRONTEND_URL doit être l'URL de votre application frontend déployée
-    FRONTEND_URL = os.environ.get('FRONTEND_URL')
-    if not FRONTEND_URL:
-        raise ValueError("FRONTEND_URL doit être définie en mode production.")
+        # FRONTEND_URL doit être l'URL de votre application frontend déployée
+        self.FRONTEND_URL = os.environ.get('FRONTEND_URL')
+        if not self.FRONTEND_URL:
+            raise ValueError("FRONTEND_URL doit être définie en mode production.")
 
 
 # Dictionnaire pour mapper les noms de configuration aux classes
