@@ -1,6 +1,6 @@
 // frontend/PLAN_DEVELOPPEMENT_FORNTEND.md.txt
 // frontend/PLAN_DEVELOPPEMENT_FRONTEND.md
-// Version 1.5 (Mise à jour post-Chargement GraphEditorPage)
+// Version 1.6 (Mise à jour post-Implémentation et Correction de l'Éditeur)
 
 # Plan Détaillé de Développement Frontend
 ## Éditeur Visuel de Structure de Récit Mermaid
@@ -16,12 +16,12 @@ frontend/src/
 │   ├── ProjectForm.tsx        # ✅ Implémenté (CRUD Projet)
 │   ├── SubProjectCard.tsx     # ✅ Implémenté (UI SubProject)
 │   ├── SubProjectForm.tsx     # ✅ Implémenté (UI SubProject)
-│   ├── MermaidViewer.tsx      # [TODO] Rendu du graphe Mermaid
-│   ├── MermaidEditor.tsx      # [TODO] Éditeur de code Mermaid
+│   ├── MermaidViewer.tsx      # ✅ TERMINÉ (Rendu du graphe Mermaid, Correction Asynchrone Appliquée)
+│   ├── MermaidEditor.tsx      # ✅ TERMINÉ (Éditeur de code Mermaid)
 │   └── ConfirmDialog.tsx      # [TODO] Dialogue de confirmation
 ├── pages/
 │   ├── ProjectListPage.tsx    (MIS À JOUR) # ✅ CRUD Projet/SubProject UI implémenté
-│   └── GraphEditorPage.tsx    (MIS À JOUR) # ✅ Logique de chargement des données implémentée (Phase 2.1)
+│   └── GraphEditorPage.tsx    (MIS À JOUR) # ✅ Logique de chargement, Layout, et Détection 'isDirty' implémentés
 ├── services/
 │   └── api.ts                  (EXISTE DÉJÀ)
 └── types/
@@ -33,15 +33,7 @@ frontend/src/
 ## 🎯 Phase 1 : ProjectListPage - Interface de Gestion des Projets et Sous-Projets (ACHEVÉE)
 
 ### Fonctionnalités Implémentées (Phase 1.1 à 1.6)
-
-#### 1.1 - 1.4 : CRUD Projet UI
-**Statut de 1.1 - 1.4 : ✅ TERMINÉ**
-
-#### 1.5 - Composant SubProjectCard
-**Statut de 1.5 : ✅ TERMINÉ** (Créé et intégré dans `ProjectCard.tsx`)
-
-#### 1.6 - Composant SubProjectForm
-**Statut de 1.6 : ✅ TERMINÉ** (Créé et intégré dans `ProjectCard.tsx`)
+**Statut : ✅ TERMINÉ**
 
 ---
 
@@ -53,46 +45,34 @@ Construire l'interface et la logique pour éditer, visualiser, importer et expor
 ### Fonctionnalités Implémentées / à Implémenter
 
 #### 2.1 - Chargement du SubProject dans GraphEditorPage
-**Statut de 2.1 : ✅ TERMINÉ** (Implémentation de `useEffect` pour fetch et gestion des états loading/error.)
+**Statut de 2.1 : ✅ TERMINÉ**
 
 #### 2.2 - Visualisation Mermaid
 ```typescript
 // À créer : components/MermaidViewer.tsx
-
-// Implémentation :
-// - Initialiser Mermaid dans useEffect.
-// - Afficher le diagramme basé sur le code via `mermaid.initialize` et `mermaid.render`.
-// - Gérer les erreurs de syntaxe Mermaid.
+// Statut : ✅ TERMINÉ (Incluant la correction pour le rendu asynchrone)
 ```
-**Statut de 2.2 : 🔨 À FAIRE**
+**Statut de 2.2 : ✅ TERMINÉ**
 
 #### 2.3 - Éditeur de Code Mermaid
 ```typescript
 // À créer : components/MermaidEditor.tsx
-
-interface MermaidEditorProps {
-  initialCode: string
-  onChange: (code: string) => void
-}
-
-// Utiliser un textarea simple pour commencer.
+// Statut : ✅ TERMINÉ
 ```
-**Statut de 2.3 : 🔨 À FAIRE**
+**Statut de 2.3 : ✅ TERMINÉ**
 
 #### 2.4 - Layout de l'Éditeur
 ```typescript
 // Structure de GraphEditorPage :
 // Disposition en deux colonnes : Éditeur (Gauche) et Aperçu (Droite)
-// Boutons : Sauvegarder, Exporter, Importer, Retour
+// Boutons : Sauvegarder (avec logique isDirty), Exporter, Importer, Retour
 ```
-**Statut de 2.4 : 🔨 À FAIRE**
+**Statut de 2.4 : ✅ TERMINÉ (Logique isDirty et Layout en place)**
 
 #### 2.5 - Sauvegarde (API Update)
 ```typescript
 // Fonction handleSave dans GraphEditorPage :
-// - Appelle apiService.updateSubProject(subprojectId, { mermaid_definition: mermaidCode, ... })
-// - Gère l'état 'saving' et affiche un message de succès.
-// NOTE: Le backend doit supporter la mise à jour des champs principaux du SubProject (titre, layout, definition).
+// - Appelle apiService.updateSubProject(...) pour sauvegarder currentMermaidCode
 ```
 **Statut de 2.5 : 🔨 À FAIRE**
 
@@ -100,14 +80,13 @@ interface MermaidEditorProps {
 ```typescript
 // Fonction handleExport :
 // - Appelle l'endpoint backend /api/mermaid/export/{subprojectId}
-// - Déclenche le téléchargement du fichier .mmd côté client.
+// - Déclenche le téléchargement du fichier .mmd.
 ```
 **Statut de 2.6 : 🔨 À FAIRE**
 
 #### 2.7 - Import Mermaid
 ```typescript
 // Fonction handleImport :
-// - Ouvre un sélecteur de fichier côté client.
 // - Lit le contenu du fichier .mmd.
 // - Met à jour l'état mermaidCode.
 ```
@@ -145,4 +124,5 @@ interface MermaidEditorProps {
 1. [x] **Test CRUD Projet** : Créer, vérifier l'apparition, supprimer.
 2. [x] **Test CRUD SubProject UI** : Créer un sous-projet via `SubProjectForm` dans `ProjectCard`, vérifier la mise à jour du compteur et de la liste. Supprimer un sous-projet, vérifier la mise à jour.
 3. [x] **Test Navigation** : Vérifier que le clic sur un sous-projet mène à `GraphEditorPage` et que le chargement fonctionne (Phase 2.1).
-4. [ ] **Test Éditeur de Graphe** : (À venir) Modifier le code Mermaid et sauvegarder.
+4. [x] **Test Éditeur de Graphe** : Modifier le code Mermaid et vérifier le rendu visuel.
+5. [ ] **Test Sauvegarde** : (À venir) Modifier le code Mermaid, déclencher la sauvegarde via l'API.
