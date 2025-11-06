@@ -24,6 +24,7 @@ function GraphEditorPage() {
   const [loading, setLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false) // Nouvel état pour la sauvegarde
   const [error, setError] = useState<string | null>(null)
+  const [hasMermaidError, setHasMermaidError] = useState(false) // État pour les erreurs de rendu Mermaid
 
   const subprojectIdNumber = subprojectId ? Number(subprojectId) : null
 
@@ -162,14 +163,14 @@ function GraphEditorPage() {
           </button>
           <button
             onClick={handleSave}
-            disabled={!isDirty || isSaving}
+            disabled={!isDirty || isSaving || hasMermaidError}
             className={`px-5 py-2 text-white rounded-md text-sm font-semibold transition ${
-                !isDirty || isSaving
+                !isDirty || isSaving || hasMermaidError
                     ? 'bg-indigo-300 cursor-not-allowed'
                     : 'bg-indigo-600 hover:bg-indigo-700 cursor-pointer' 
             }`}
           >
-            {isSaving ? 'Sauvegarde...' : 'Sauvegarder'}
+            {isSaving ? 'Sauvegarde...' : hasMermaidError ? 'Erreur de syntaxe' : 'Sauvegarder'}
           </button>
       </div>
 
@@ -187,7 +188,10 @@ function GraphEditorPage() {
         <div className="h-full flex flex-col">
            <h2 className="text-lg font-semibold text-gray-700 mb-2">Visualiseur</h2>
            <div className="flex-grow">
-            <MermaidViewer mermaidCode={currentMermaidCode} />
+            <MermaidViewer 
+              mermaidCode={currentMermaidCode}
+              onRenderStateChange={setHasMermaidError}
+            />
            </div>
         </div>
       </main>

@@ -7,9 +7,10 @@ import mermaid from 'mermaid'
 // Props interface
 interface MermaidViewerProps {
   mermaidCode: string
+  onRenderStateChange?: (hasError: boolean) => void
 }
 
-const MermaidViewer: React.FC<MermaidViewerProps> = ({ mermaidCode }) => {
+const MermaidViewer: React.FC<MermaidViewerProps> = ({ mermaidCode, onRenderStateChange }) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const [renderError, setRenderError] = useState<string | null>(null)
   const renderVersionRef = useRef(0)
@@ -58,6 +59,8 @@ const MermaidViewer: React.FC<MermaidViewerProps> = ({ mermaidCode }) => {
           }
           // Clear any previous error on successful render
           setRenderError(null)
+          // Notify parent that render succeeded
+          onRenderStateChange?.(false)
         }
 
       } catch (error) {
@@ -75,6 +78,8 @@ const MermaidViewer: React.FC<MermaidViewerProps> = ({ mermaidCode }) => {
                 : error.message
         }
         setRenderError(errorMessage)
+        // Notify parent that render failed
+        onRenderStateChange?.(true)
       }
     }
 
