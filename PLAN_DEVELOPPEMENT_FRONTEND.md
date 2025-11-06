@@ -1,6 +1,6 @@
 // frontend/PLAN_DEVELOPPEMENT_FORNTEND.md.txt
 // frontend/PLAN_DEVELOPPEMENT_FRONTEND.md
-// Version 1.4 (Mise à jour post-CRUD SubProject UI)
+// Version 1.5 (Mise à jour post-Chargement GraphEditorPage)
 
 # Plan Détaillé de Développement Frontend
 ## Éditeur Visuel de Structure de Récit Mermaid
@@ -21,7 +21,7 @@ frontend/src/
 │   └── ConfirmDialog.tsx      # [TODO] Dialogue de confirmation
 ├── pages/
 │   ├── ProjectListPage.tsx    (MIS À JOUR) # ✅ CRUD Projet/SubProject UI implémenté
-│   └── GraphEditorPage.tsx    (À VENIR)    # Page principale pour l'édition du graphe
+│   └── GraphEditorPage.tsx    (MIS À JOUR) # ✅ Logique de chargement des données implémentée (Phase 2.1)
 ├── services/
 │   └── api.ts                  (EXISTE DÉJÀ)
 └── types/
@@ -50,26 +50,10 @@ frontend/src/
 ### Objectif
 Construire l'interface et la logique pour éditer, visualiser, importer et exporter le contenu d'un `SubProject`.
 
-### Fonctionnalités à Implémenter (Dépend de la Phase 1.5 et 1.6)
+### Fonctionnalités Implémentées / à Implémenter
 
-#### 2.1 - Chargement du SubProject
-```typescript
-// Dans GraphEditorPage.tsx
-
-// États nécessaires :
-// - subproject: SubProjectRead | null
-// - mermaidCode: string
-// - loading: boolean
-// - saving: boolean
-// - error: string | null
-
-// Au montage (useEffect) :
-// 1. Récupérer projectId et subprojectId des paramètres d'URL.
-// 2. Appeler apiService.getSubProject(Number(subprojectId)) pour charger l'entité complète.
-// 3. Initialiser mermaidCode avec subproject.mermaid_definition.
-// 4. Gérer le cas où le SubProject n'existe pas (404).
-```
-**Statut de 2.1 : 🔨 À FAIRE**
+#### 2.1 - Chargement du SubProject dans GraphEditorPage
+**Statut de 2.1 : ✅ TERMINÉ** (Implémentation de `useEffect` pour fetch et gestion des états loading/error.)
 
 #### 2.2 - Visualisation Mermaid
 ```typescript
@@ -160,5 +144,5 @@ interface MermaidEditorProps {
 
 1. [x] **Test CRUD Projet** : Créer, vérifier l'apparition, supprimer.
 2. [x] **Test CRUD SubProject UI** : Créer un sous-projet via `SubProjectForm` dans `ProjectCard`, vérifier la mise à jour du compteur et de la liste. Supprimer un sous-projet, vérifier la mise à jour.
-3. [ ] **Navigation** : Vérifier que le clic sur un sous-projet mène à `GraphEditorPage`.
+3. [x] **Test Navigation** : Vérifier que le clic sur un sous-projet mène à `GraphEditorPage` et que le chargement fonctionne (Phase 2.1).
 4. [ ] **Test Éditeur de Graphe** : (À venir) Modifier le code Mermaid et sauvegarder.

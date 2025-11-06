@@ -1,6 +1,6 @@
 # frontend/AMELIORATIONS_COMPLETEES.md
 // frontend/AMELIORATIONS_COMPLETEES.md
-// Version 1.3 (Mise à jour post-CRUD SubProject UI)
+// Version 1.4 (Mise à jour post-Chargement GraphEditorPage)
 
 # ✅ Améliorations Complétées - [Date Actuelle]
 
@@ -11,8 +11,9 @@
 Le backend est 100% opérationnel. Le Frontend a finalisé deux étapes cruciales :
 1. **CRUD (Create, Read, Delete) pour l'entité `Project`** intégré.
 2. **Intégration de l'UI pour la gestion des `SubProject`** (création via `SubProjectForm` et affichage/suppression via `SubProjectCard`), assurant la mise à jour dynamique de la liste des projets parents.
+3. **ACHEVEMENT de la Phase 2.1** : `GraphEditorPage.tsx` est fonctionnel pour charger les données du sous-projet via l'API.
 
-La prochaine étape majeure est la construction de l'outil principal : l'éditeur de graphe (`GraphEditorPage`).
+La prochaine étape majeure est la construction de l'outil principal : l'éditeur de graphe (`MermaidViewer` et `MermaidEditor`).
 
 ---
 
@@ -68,21 +69,26 @@ La prochaine étape majeure est la construction de l'outil principal : l'éditeu
 - Mise à jour de `ProjectCard.tsx` et `ProjectListPage.tsx` pour intégrer les callbacks de rafraîchissement global.
 **Statut** : ✅ TERMINÉ
 
+### 7. Implémentation du Chargement du Graphe (Phase 2.1)
+**Tâche** : Mise en place de la logique de chargement du `SubProject` dans `GraphEditorPage.tsx`, incluant la gestion des états de chargement, erreur et l'extraction des données de l'API.
+**Fichier impacté** : `frontend/src/pages/GraphEditorPage.tsx`
+**Statut** : ✅ TERMINÉ
+
 ---
 
 ## ✅ Fonctionnalités Critiques Implémentées (Backend - Rappel)
 
-### 7. Services CRUD SubProject & Relations 📦🔗
+### 8. Services CRUD SubProject & Relations 📦🔗
 
 - **Fichiers créés/modifiés** : `backend/app/services/subprojects.py`, `backend/app/routes/subprojects.py`
 - **Fonctionnalités** : CRUD complet pour `SubProject`, incluant validations et gestion d'erreurs.
 
-### 8. Services CRUD Node & Relationship 🔗
+### 9. Services CRUD Node & Relationship 🔗
 
 - **Fichiers créés/modifiés** : `backend/app/services/nodes.py`, `backend/app/routes/nodes.py`
 - **Fonctionnalités** : CRUD complet pour `Node` et `Relationship`, avec validations croisées (ex: appartenance au même SubProject).
 
-### 9. Services de Transformation Mermaid 🔄
+### 10. Services de Transformation Mermaid 🔄
 
 - **Fichiers créés/modifiés** : `backend/app/services/mermaid_parser.py`, `backend/app/services/mermaid_generator.py`, `backend/app/routes/mermaid.py`
 - **Fonctionnalités** :
@@ -115,7 +121,7 @@ backend/
 │       └── mermaid_generator.py # ✅ Service Export: DB → Mermaid
 ├── migrations/               # ✅ Flask-Migrate
 ├── run.py                    # ✅ Point d'entrée
-└── requirements.txt          # ✅ Dépendances
+└── requirements.txt          # ✅ Dépendances Python installées
 ```
 
 ### API RESTful Complète (Backend)
@@ -152,6 +158,7 @@ backend/
 - ✅ **Chargement Initial des Projets** (`ProjectListPage.tsx`) **TERMINÉ**
 - ✅ **CRUD Projet UI** (`ProjectForm`, `ProjectCard`) **TERMINÉ**
 - ✅ **CRUD SubProject UI (Affichage/Création/Suppression)** **TERMINÉ**
+- ✅ **Logique de Chargement du Graphe** (`GraphEditorPage.tsx`) **TERMINÉ**
 
 ---
 
