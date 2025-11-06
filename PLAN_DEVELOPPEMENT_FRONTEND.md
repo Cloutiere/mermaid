@@ -1,5 +1,8 @@
+// PLAN_DEVELOPPEMENT_FRONTEND.md.txt
+// Version 1.1 (Mise à jour post-Routage & Fetch initial)
+
 # Plan Détaillé de Développement Frontend
-## Éditeur Visuel de Structure Narrative Mermaid
+## Éditeur Visuel de Structure de Récit Mermaid
 
 ---
 
@@ -8,16 +11,16 @@
 ```
 frontend/src/
 ├── components/           (À CRÉER)
-│   ├── ProjectCard.tsx
-│   ├── ProjectForm.tsx
-│   ├── SubProjectCard.tsx
-│   ├── SubProjectForm.tsx
-│   ├── MermaidViewer.tsx
-│   ├── MermaidEditor.tsx
-│   └── ConfirmDialog.tsx
+│   ├── ProjectCard.tsx        # [TODO] Carte pour un projet (Affichage/Actions)
+│   ├── ProjectForm.tsx        # [TODO] Formulaire de création de projet
+│   ├── SubProjectCard.tsx     # [TODO] Carte pour un sous-projet
+│   ├── SubProjectForm.tsx     # [TODO] Formulaire de création de sous-projet
+│   ├── MermaidViewer.tsx      # [TODO] Rendu du graphe Mermaid
+│   ├── MermaidEditor.tsx      # [TODO] Éditeur de code Mermaid
+│   └── ConfirmDialog.tsx      # [TODO] Dialogue de confirmation
 ├── pages/
-│   ├── ProjectListPage.tsx    (À MODIFIER)
-│   └── GraphEditorPage.tsx    (À MODIFIER)
+│   ├── ProjectListPage.tsx    (MIS À JOUR) # ✅ Logique de Fetch/Loading implémentée
+│   └── GraphEditorPage.tsx    (À VENIR)    # Routage fonctionnel, chargement des données à implémenter
 ├── services/
 │   └── api.ts                  (EXISTE DÉJÀ)
 └── types/
@@ -33,34 +36,35 @@ Créer une page complète pour lister, créer et gérer tous les projets.
 
 ### Fonctionnalités à Implémenter
 
-#### 1.1 - Affichage de la Liste des Projets
+#### 1.1 - Affichage de la Liste des Projets (Fetch & États)
 ```typescript
 // Dans ProjectListPage.tsx
 
 // États nécessaires :
-- projects: ProjectRead[]           // Liste des projets
-- loading: boolean                  // État de chargement
-- error: string | null              // Gestion des erreurs
-- showCreateForm: boolean           // Afficher/masquer le formulaire
+// - projects: ProjectRead[]           // Liste des projets (Initialisation à [])
+// - loading: boolean                  // État de chargement (Initialisation à true)
+// - error: string | null              // Gestion des erreurs (Initialisation à null)
+// - showCreateForm: boolean           // Afficher/masquer le formulaire (Initialisation à false)
 
 // Au montage du composant (useEffect) :
-1. Appeler apiService.getProjects()
-2. Stocker les résultats dans l'état projects
-3. Gérer le loading et les erreurs
+// 1. Appeler apiService.getProjects() ✅ FAIT
+// 2. Stocker les résultats dans l'état projects ✅ FAIT
+// 3. Gérer le loading et les erreurs ✅ FAIT
 
 // Affichage :
-- Utiliser une grille (grid) pour afficher les projets
-- Pour chaque projet, utiliser le composant ProjectCard
-- Si aucun projet : afficher un message d'invitation à créer
+// - Utiliser une grille (grid) pour afficher les projets
+// - Pour chaque projet, utiliser le composant ProjectCard ✅ PROCHAINE ÉTAPE
+// - Si aucun projet : afficher un message d'invitation à créer ✅ PROCHAINE ÉTAPE
 ```
+**Statut de 1.1 : ✅ TERMINÉ (Mécanisme de fetch et gestion d'état en place)**
 
 #### 1.2 - Bouton "Créer un Nouveau Projet"
 ```typescript
 // Fonctionnalité :
-- Bouton visible en haut de page
-- Au clic : ouvre le formulaire de création (ProjectForm)
-- Le formulaire est une modale ou un panneau latéral
+// - Bouton visible en haut de page
+// - Au clic : met à jour l'état showCreateForm à true, ouvrant le formulaire (ProjectForm)
 ```
+**Statut de 1.2 : 🔨 À FAIRE**
 
 #### 1.3 - Composant ProjectCard
 ```typescript
@@ -68,40 +72,42 @@ Créer une page complète pour lister, créer et gérer tous les projets.
 
 interface ProjectCardProps {
   project: ProjectRead
-  onDelete: (id: number) => void
-  onRefresh: () => void
+  onDelete: (id: number) => void // Nécessite l'implémentation de la suppression
+  onRefresh: () => void         // Nécessaire pour rafraîchir la liste après une action
 }
 
 // Affichage :
-- Titre du projet
-- Nombre de sous-projets
-- Liste des sous-projets (SubProjectCard pour chacun)
-- Bouton "Ajouter un Sous-Projet"
-- Bouton "Supprimer le Projet" (avec confirmation)
+// - Titre du projet
+// - Nombre de sous-projets (doit être calculé ou récupéré)
+// - Liste des sous-projets (via SubProjectCard)
+// - Bouton "Ajouter un Sous-Projet"
+// - Bouton "Supprimer le Projet" (avec confirmation via ConfirmDialog)
 
 // Actions :
-- Cliquer sur un sous-projet → navigue vers GraphEditorPage
-- Supprimer un projet → appelle apiService.deleteProject(id)
-- Ajouter un sous-projet → ouvre SubProjectForm
+// - Cliquer sur un sous-projet → navigue vers GraphEditorPage
+// - Supprimer un projet → appelle apiService.deleteProject(id)
+// - Ajouter un sous-projet → ouvre SubProjectForm
 ```
+**Statut de 1.3 : 🔨 À FAIRE**
 
 #### 1.4 - Composant ProjectForm
 ```typescript
 // À créer : components/ProjectForm.tsx
 
 interface ProjectFormProps {
-  onSuccess: () => void
+  onSuccess: () => void // Fonction de rappel pour rafraîchir la liste après succès
   onCancel: () => void
 }
 
 // Champs du formulaire :
-- title: string (obligatoire)
+// - title: string (obligatoire)
 
 // Actions :
-- Soumettre → appelle apiService.createProject({ title })
-- Annuler → ferme le formulaire
-- Gérer la validation (titre non vide)
+// - Soumettre → appelle apiService.createProject({ title })
+// - Annuler → ferme le formulaire
+// - Gérer la validation (titre non vide)
 ```
+**Statut de 1.4 : 🔨 À FAIRE**
 
 #### 1.5 - Composant SubProjectCard
 ```typescript
@@ -113,13 +119,14 @@ interface SubProjectCardProps {
 }
 
 // Affichage :
-- Titre du sous-projet
-- Aperçu du code Mermaid (première ligne ou icône)
-- Bouton "Ouvrir l'Éditeur"
+// - Titre du sous-projet
+// - Aperçu du code Mermaid (première ligne ou icône)
+// - Bouton "Ouvrir l'Éditeur"
 
 // Actions :
-- Cliquer → navigate(`/project/${projectId}/subproject/${subproject.id}`)
+// - Cliquer → navigate(`/project/${projectId}/subproject/${subproject.id}`)
 ```
+**Statut de 1.5 : 🔨 À FAIRE**
 
 #### 1.6 - Composant SubProjectForm
 ```typescript
@@ -127,23 +134,23 @@ interface SubProjectCardProps {
 
 interface SubProjectFormProps {
   projectId: number
-  onSuccess: () => void
+  onSuccess: () => void // Fonction de rappel pour rafraîchir la liste des sous-projets
   onCancel: () => void
 }
 
 // Champs du formulaire :
-- title: string (obligatoire)
-- mermaid_definition: string (avec un textarea ou éditeur simple)
+// - title: string (obligatoire)
+// - mermaid_definition: string (avec un textarea ou éditeur simple)
 
-// Valeur par défaut pour mermaid_definition :
 const DEFAULT_MERMAID = `graph TD
     A[Début] --> B[Milieu]
     B --> C[Fin]`
 
 // Actions :
-- Soumettre → appelle apiService.createSubProject({ project_id, title, mermaid_definition })
-- Annuler → ferme le formulaire
+// - Soumettre → appelle apiService.createSubProject({ project_id, title, mermaid_definition })
+// - Annuler → ferme le formulaire
 ```
+**Statut de 1.6 : 🔨 À FAIRE**
 
 ---
 
@@ -159,48 +166,35 @@ Créer un éditeur complet pour visualiser et modifier les graphes Mermaid.
 // Dans GraphEditorPage.tsx
 
 // États nécessaires :
-- subproject: SubProjectRead | null
-- nodes: NodeRead[]
-- relationships: RelationshipRead[]
-- mermaidCode: string
-- loading: boolean
-- saving: boolean
-- error: string | null
+// - subproject: SubProjectRead | null
+// - nodes: NodeRead[]
+// - relationships: RelationshipRead[]
+// - mermaidCode: string
+// - loading: boolean
+// - saving: boolean
+// - error: string | null
 
 // Au montage (useEffect) :
-const { projectId, subprojectId } = useParams()
-
-1. Appeler apiService.getSubProject(Number(subprojectId))
-2. Stocker dans l'état subproject
-3. Initialiser mermaidCode avec subproject.mermaid_definition
-4. Charger les nodes et relationships (optionnel, déjà dans subproject)
+// 1. Récupérer projectId et subprojectId
+// 2. Appeler apiService.getSubProject(Number(subprojectId)) ✅ À FAIRE
+// 3. Initialiser mermaidCode avec subproject.mermaid_definition ✅ À FAIRE
+// 4. Charger les nodes et relationships (optionnel, déjà dans subproject) ✅ À FAIRE
 ```
+**Statut de 2.1 : 🔨 À FAIRE**
 
 #### 2.2 - Visualisation Mermaid
 ```typescript
 // À créer : components/MermaidViewer.tsx
 
 // Installation requise :
-npm install mermaid
-
-interface MermaidViewerProps {
-  code: string
-}
+// npm install mermaid
 
 // Implémentation :
-import mermaid from 'mermaid'
-
-// Initialiser Mermaid dans useEffect :
-mermaid.initialize({ 
-  startOnLoad: true,
-  theme: 'default'
-})
-
-// Afficher le diagramme :
-- Utiliser un div avec un id unique
-- Appeler mermaid.render() ou mermaid.contentLoaded()
-- Gérer les erreurs de syntaxe Mermaid
+// - Initialiser Mermaid dans useEffect.
+// - Afficher le diagramme basé sur le code.
+// - Gérer les erreurs de syntaxe Mermaid.
 ```
+**Statut de 2.2 : 🔨 À FAIRE**
 
 #### 2.3 - Éditeur de Code Mermaid
 ```typescript
@@ -211,128 +205,49 @@ interface MermaidEditorProps {
   onChange: (code: string) => void
 }
 
-// Option 1 - Simple textarea :
-<textarea 
-  value={code}
-  onChange={(e) => onChange(e.target.value)}
-  className="font-mono"
-  rows={20}
-/>
-
-// Option 2 - Éditeur enrichi (optionnel) :
-npm install @monaco-editor/react
-// Utiliser Monaco Editor pour la coloration syntaxique
+// Utiliser un textarea simple ou Monaco Editor.
 ```
+**Statut de 2.3 : 🔨 À FAIRE**
 
 #### 2.4 - Layout de l'Éditeur
 ```typescript
 // Structure de GraphEditorPage :
-
-<div className="grid grid-cols-2 gap-4">
-  {/* Colonne Gauche - Éditeur */}
-  <div>
-    <h2>Code Mermaid</h2>
-    <MermaidEditor 
-      initialCode={mermaidCode}
-      onChange={setMermaidCode}
-    />
-    
-    <div className="mt-4 flex gap-2">
-      <button onClick={handleSave}>Sauvegarder</button>
-      <button onClick={handleExport}>Exporter</button>
-      <button onClick={handleImport}>Importer</button>
-    </div>
-  </div>
-  
-  {/* Colonne Droite - Aperçu */}
-  <div>
-    <h2>Aperçu du Graphe</h2>
-    <MermaidViewer code={mermaidCode} />
-  </div>
-</div>
+// Disposition en deux colonnes : Éditeur (Gauche) et Aperçu (Droite)
+// Boutons : Sauvegarder, Exporter, Importer, Retour
 ```
+**Statut de 2.4 : 🔨 À FAIRE**
 
-#### 2.5 - Sauvegarde
+#### 2.5 - Sauvegarde (API Update)
 ```typescript
 // Fonction handleSave dans GraphEditorPage :
-
-const handleSave = async () => {
-  setSaving(true)
-  try {
-    // Mettre à jour le SubProject avec le nouveau code
-    await apiService.updateSubProject(subprojectId, {
-      project_id: projectId,
-      title: subproject.title,
-      mermaid_definition: mermaidCode
-    })
-    
-    // Afficher un message de succès (toast ou alert)
-    alert('Graphe sauvegardé avec succès!')
-  } catch (err) {
-    setError('Erreur lors de la sauvegarde')
-  } finally {
-    setSaving(false)
-  }
-}
+// - Appelle apiService.updateSubProject(subprojectId, { ..., mermaid_definition: mermaidCode })
+// - Gère l'état 'saving' et affiche un message de succès.
 ```
+**Statut de 2.5 : 🔨 À FAIRE**
 
 #### 2.6 - Export Mermaid
 ```typescript
 // Fonction handleExport :
-
-const handleExport = async () => {
-  try {
-    // Appeler l'API d'export
-    const response = await fetch(`/api/mermaid/export/${subprojectId}`)
-    const mermaidText = await response.text()
-    
-    // Télécharger comme fichier
-    const blob = new Blob([mermaidText], { type: 'text/plain' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${subproject.title}.mmd`
-    a.click()
-  } catch (err) {
-    setError('Erreur lors de l\'export')
-  }
-}
+// - Appelle l'endpoint backend /api/mermaid/export/{subprojectId}
+// - Déclenche le téléchargement du fichier .mmd côté client.
 ```
+**Statut de 2.6 : 🔨 À FAIRE**
 
 #### 2.7 - Import Mermaid
 ```typescript
 // Fonction handleImport :
-
-const handleImport = () => {
-  // Créer un input file
-  const input = document.createElement('input')
-  input.type = 'file'
-  input.accept = '.mmd,.txt'
-  
-  input.onchange = async (e) => {
-    const file = (e.target as HTMLInputElement).files?.[0]
-    if (!file) return
-    
-    const text = await file.text()
-    setMermaidCode(text)
-  }
-  
-  input.click()
-}
+// - Ouvre un sélecteur de fichier côté client.
+// - Lit le contenu du fichier .mmd.
+// - Met à jour l'état mermaidCode.
 ```
+**Statut de 2.7 : 🔨 À FAIRE**
 
 #### 2.8 - Bouton Retour
 ```typescript
 // Ajouter un bouton pour revenir à la liste :
-
-import { useNavigate } from 'react-router-dom'
-
-const navigate = useNavigate()
-
-<button onClick={() => navigate('/')}>
-  ← Retour à la liste des projets
-</button>
+// Utilisation de useNavigate de react-router-dom pour naviguer vers '/'
 ```
+**Statut de 2.8 : 🔨 À FAIRE**
 
 ---
 
@@ -341,43 +256,16 @@ const navigate = useNavigate()
 ### 3.1 - ConfirmDialog
 ```typescript
 // À créer : components/ConfirmDialog.tsx
-
-interface ConfirmDialogProps {
-  isOpen: boolean
-  title: string
-  message: string
-  onConfirm: () => void
-  onCancel: () => void
-}
-
-// Utilisation :
-- Afficher une modale de confirmation
-- Boutons "Confirmer" et "Annuler"
-- Utilisé avant la suppression d'un projet
+// Modale de confirmation réutilisable (utilisée pour la suppression de projets).
 ```
+**Statut de 3.1 : 🔨 À FAIRE**
 
 ---
 
 ## 🎨 Styles et UI
 
 ### Recommandations TailwindCSS
-
-```typescript
-// Boutons principaux :
-className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
-
-// Boutons secondaires :
-className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded"
-
-// Boutons danger :
-className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
-
-// Cartes :
-className="bg-white p-6 rounded-lg shadow-md border"
-
-// Grille de projets :
-className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-```
+Styles basiques définis pour les cartes, boutons (principal, secondaire, danger) et la grille de projets.
 
 ---
 
@@ -391,121 +279,42 @@ npm install @monaco-editor/react  # Optionnel, pour éditeur enrichi
 
 ---
 
-## 🔄 Flux de Données
+## 🔄 Flux de Données (Rappel)
 
 ### Création d'un Projet
 1. Utilisateur clique "Créer un Projet"
 2. Formulaire s'ouvre (ProjectForm)
-3. Utilisateur entre le titre
-4. Soumission → `apiService.createProject({ title })`
-5. Rafraîchir la liste des projets
-
-### Création d'un Sous-Projet
-1. Depuis ProjectCard, clic "Ajouter Sous-Projet"
-2. Formulaire s'ouvre (SubProjectForm)
-3. Utilisateur entre titre et code Mermaid initial
-4. Soumission → `apiService.createSubProject({ project_id, title, mermaid_definition })`
-5. Rafraîchir le projet parent
+3. Soumission → `apiService.createProject({ title })`
+4. Rafraîchir la liste des projets dans `ProjectListPage`
 
 ### Édition d'un Graphe
 1. Clic sur SubProjectCard
 2. Navigation vers `/project/:projectId/subproject/:subprojectId`
 3. GraphEditorPage charge le subproject
-4. Affichage éditeur + aperçu en temps réel
-5. Modifications → bouton Sauvegarder
-6. Sauvegarde → `apiService.updateSubProject(...)`
+4. Modifications → bouton Sauvegarder
+5. Sauvegarde → `apiService.updateSubProject(...)`
 
 ---
 
-## 🧪 Tests Manuels à Effectuer
+## 🧪 Tests Manuels à Effectuer (Prioritaires)
 
-### Test 1 : CRUD Projet
-- [ ] Créer un projet
-- [ ] Voir le projet dans la liste
-- [ ] Supprimer le projet
-
-### Test 2 : CRUD Sous-Projet
-- [ ] Créer un sous-projet
-- [ ] Voir le sous-projet dans la carte du projet
-- [ ] Ouvrir l'éditeur du sous-projet
-
-### Test 3 : Édition Mermaid
-- [ ] Modifier le code Mermaid
-- [ ] Voir l'aperçu se mettre à jour
-- [ ] Sauvegarder les modifications
-- [ ] Recharger la page → vérifier que les modifications sont conservées
-
-### Test 4 : Import/Export
-- [ ] Exporter un graphe Mermaid
-- [ ] Importer un fichier Mermaid
-- [ ] Vérifier que le code est chargé correctement
+1. [ ] **Test CRUD Projet** : Créer un projet via `ProjectForm`, vérifier son apparition dans `ProjectListPage`, puis le supprimer.
+2. [ ] **Navigation** : Vérifier que le clic sur un projet (futur `ProjectCard`) mène à `GraphEditorPage`.
+3. [ ] **API Health Check** : Vérifier que le statut reste vert/atteignable.
 
 ---
 
 ## 💡 Conseils de Développement
 
-### Ordre Recommandé d'Implémentation
+### Ordre Recommandé d'Implémentation (Suite)
 
-1. **Commencer par ProjectListPage**
-   - Affichage liste basique
-   - Formulaire création projet
-   - Test CRUD projet
-
-2. **Ajouter les Sous-Projets**
-   - ProjectCard avec liste de subprojects
-   - SubProjectForm
-   - Navigation vers éditeur
-
-3. **Développer GraphEditorPage**
-   - Chargement du subproject
-   - MermaidViewer simple
-   - MermaidEditor (textarea)
-   - Sauvegarde
-
-4. **Améliorer l'UX**
-   - Éditeur Monaco (optionnel)
-   - Aperçu temps réel
-   - Import/Export
-   - Confirmations de suppression
+1.  **Composants de Gestion de Projet** : `ProjectCard.tsx` et `ProjectForm.tsx`.
+2.  Intégration dans `ProjectListPage.tsx` (Affichage des données récupérées + boutons CRUD).
+3.  Développement de la Phase 2 (Éditeur de Graphe).
 
 ### Gestion des Erreurs
-```typescript
-// Toujours wrapper les appels API dans try/catch
-try {
-  const projects = await apiService.getProjects()
-  setProjects(projects)
-} catch (err) {
-  setError(err instanceof Error ? err.message : 'Erreur inconnue')
-}
-```
-
-### État de Chargement
-```typescript
-// Afficher un spinner pendant le chargement
-{loading ? (
-  <div className="text-center">Chargement...</div>
-) : (
-  <div>Contenu</div>
-)}
-```
+Continuer d'utiliser `try/catch` autour des appels API pour mettre à jour l'état `error` dans les pages concernées.
 
 ---
 
-## 📝 Checklist Finale
-
-- [ ] ProjectListPage affiche tous les projets
-- [ ] Création de projet fonctionne
-- [ ] Suppression de projet fonctionne
-- [ ] Création de sous-projet fonctionne
-- [ ] Navigation vers GraphEditorPage fonctionne
-- [ ] GraphEditorPage charge et affiche le subproject
-- [ ] Visualisation Mermaid fonctionne
-- [ ] Édition et sauvegarde du code Mermaid fonctionnent
-- [ ] Export Mermaid fonctionne
-- [ ] Import Mermaid fonctionne
-- [ ] Gestion des erreurs est en place
-- [ ] UI est responsive et agréable
-
----
-
-Bon développement ! 🚀
+**Prochaine Phase :** Développement des composants d'interaction pour la `ProjectListPage`.

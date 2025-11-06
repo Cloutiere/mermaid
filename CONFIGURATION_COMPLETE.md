@@ -1,10 +1,11 @@
 // CONFIGURATION_COMPLETE.md.txt
+// Version 1.1 (Mise à jour post-Routage & Fetch)
 
 # 🎉 Configuration Complète - Projet Éditeur Visuel Mermaid
 
 ## ✅ Configuration Terminée avec Succès
 
-Votre environnement est **100% opérationnel** pour les développements backend ! Les fondations sont solides et prêtes. Le service client API frontend et la navigation étant terminés, le développement de l'Interface Utilisateur (UI) constitue la prochaine étape prioritaire.
+Votre environnement est **100% opérationnel** pour les développements backend ! Le frontend a également atteint un jalon critique en finalisant le routage et la connexion initiale à l'API.
 
 ---
 
@@ -34,15 +35,15 @@ Tous les modèles sont définis dans `backend/app/models.py`. Ils ont été cré
 
 ## 🚀 Démarrage du Projet
 
-### Backend (Port 5001)
+### Backend (port 5001)
 ```bash
 cd backend
 python run.py
 ```
 Le backend est accessible sur http://localhost:5001.
 
-### Frontend (Port 5000) - Développement UI en cours
-Le workflow frontend tourne automatiquement. L'initialisation de base est présente, mais le développement de l'interface utilisateur, de la logique d'édition et de navigation est la prochaine étape :
+### Frontend (port 5000 - déjà actif via workflow)
+Le frontend tourne automatiquement ! L'initialisation de base est présente, incluant le routage et le chargement initial des projets.
 ```bash
 cd frontend
 npm run dev
@@ -91,33 +92,38 @@ flask db downgrade
 ```
 backend/
 ├── run.py                  # Point d'entrée Flask (à lancer)
-├── app/
-│   ├── models.py          # ✅ Modèles SQLAlchemy complets
-│   └── __init__.py        # Package marker
-├── migrations/            # ✅ Migrations Flask-Migrate
-│   └── versions/          # Scripts de migration générés
-├── requirements.txt       # Dépendances Python
-└── .flaskenv             # Configuration Flask
+├── app/                    # Modules applicatifs Python
+│   ├── models.py          # ✅ Modèles SQLAlchemy
+│   ├── __init__.py        # ✅ Factory Pattern
+│   ├── schemas.py         # ✅ Schémas Pydantic
+│   ├── routes/            # ✅ Routes API RESTful complètes
+│   └── services/          # ✅ Services métier critiques
+├── migrations/             # ✅ Flask-Migrate
+│   └── versions/           # ✅ Scripts de migration générés
+└── requirements.txt        # ✅ Dépendances Python installées
 ```
 
 ### Frontend
 ```
 frontend/
 ├── src/
-│   ├── App.tsx            # ✅ Composant racine (routé)
-│   ├── main.tsx           # ✅ Point d'entrée React (avec BrowserRouter)
-│   ├── pages/             # ✅ Pages de l'application
-│   │   ├── ProjectListPage.tsx # ✅ Liste des projets
-│   │   └── GraphEditorPage.tsx # ✅ Éditeur de graphe
-│   ├── services/          # ✅ Services API
-│   │   └── api.ts         # ✅ Client API dédié (Axios Wrapper)
+│   ├── components/        # [À DÉVELOPPER] Composants React (ProjectCard, Forms, Editor)
+│   ├── pages/             # ✅ Pages principales de l'application
+│   │   ├── ProjectListPage.tsx  # ✅ Liste des projets (Fetch API implémenté)
+│   │   └── GraphEditorPage.tsx  # ✅ Page Éditeur de Graphe (Routage fonctionnel)
 │   ├── types/
-│   │   └── api.ts         # ✅ Types API TypeScript
-│   └── index.css          # Styles Tailwind
-├── index.html             # Template HTML
-├── package.json           # Dépendances Node.js
-├── vite.config.ts         # Configuration Vite (proxy API)
-└── tsconfig.json          # Configuration TypeScript
+│   │   └── api.ts         # ✅ Types synchronisés avec Pydantic
+│   ├── services/
+│   │   └── api.ts         # ✅ Client API dédié (Axios Wrapper)
+│   ├── App.tsx            # ✅ Composant racine (configuration du routage)
+│   ├── main.tsx           # ✅ Point d'entrée React (avec BrowserRouter)
+│   ├── index.css          # ✅ Styles Tailwind
+│   └── vite-env.d.ts      # ✅ Types Vite
+├── index.html             # ✅ Template HTML
+├── package.json           # ✅ Dépendances Node.js installées
+├── tsconfig.json          # ✅ Configuration TypeScript
+├── vite.config.ts         # ✅ Configuration Vite (proxy API)
+└── tailwind.config.js     # ✅ Configuration Tailwind
 ```
 
 ---
@@ -125,43 +131,16 @@ frontend/
 ## 🎯 Prochaines Étapes de Développement
 
 ### Backend (✅ TERMINÉ)
-1. ~~Modèles SQLAlchemy~~ ✅ **TERMINÉ**
-2. ~~Base de données PostgreSQL initialisée~~ ✅ **TERMINÉ**
-3. ~~Flask-Migrate configuré~~ ✅ **TERMINÉ**
-4. ~~Factory Pattern + Configuration multi-env~~ ✅ **TERMINÉ**
-5. ~~CORS sécurisée~~ ✅ **TERMINÉ**
-6. ~~Gestion d'erreurs globale~~ ✅ **TERMINÉ**
-7. ~~Schémas Pydantic~~ ✅ **TERMINÉ**
-8. ~~Services métier CRUD~~ ✅ **TERMINÉ**
-9. ~~Routes API RESTful~~ ✅ **TERMINÉ**
-10. ~~Services de transformation Mermaid~~ ✅ **TERMINÉ**
+- **Toutes les fonctionnalités API (CRUD + Transformation Mermaid) sont complètes.**
 
-### Frontend (🔨 EN COURS / À DÉVELOPPER)
-1. ✅ **Types TypeScript API** (`frontend/src/types/api.ts`) - Synchronisés avec Pydantic
-2. ✅ **Client API dédié** (`frontend/src/services/api.ts`) - Wrapper Axios pour appels backend **TERMINÉ**
-3. ✅ **Router et Navigation** - Configuration React Router **TERMINÉ**
-4. 🔨 **Composants React**
-   - `MermaidViewer.tsx` : Rendu graphe avec Mermaid.js
-   - `NodeEditor.tsx` : Formulaire d'édition de nœud
-   - `GraphEditor.tsx` : Interface principale d'édition
-   - `ProjectList.tsx` : Liste des projets/sous-projets
-
----
-
-## 🔑 Variables d'Environnement Disponibles
-
-Ces variables sont automatiquement disponibles (fournies par Replit) :
-- `DATABASE_URL` - URL complète PostgreSQL
-- `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, `PGDATABASE`
-- `SESSION_SECRET`
+### Frontend (🔨 EN COURS)
+1.  **Phase 1.2 (Gestion des Projets)** : Construire les composants `ProjectCard` et `ProjectForm` pour interagir avec les données chargées dans `ProjectListPage`.
+2.  **Phase 2 (Éditeur)** : Développer `GraphEditorPage` et intégrer `MermaidViewer`.
 
 ---
 
 ## 📚 Documentation de Référence
 
-- **README.md** : Documentation principale du projet
-- **STRUCTURE.md** : Guide détaillé de la structure
-- **replit.md** : Mémoire et historique du projet
 - **DDA** : `attached_assets/DDA_mermaid_1762371637525.md`
 - **Modèles originaux** : `attached_assets/backendappmodels.py_1762371637524.txt`
 
@@ -169,8 +148,7 @@ Ces variables sont automatiquement disponibles (fournies par Replit) :
 
 ## ✨ Changements Importants (Récapitulatif)
 
-Ce document résume les étapes critiques de mise en place :
 - ✅ **Backend** : Architecture, DB, API RESTful et services de transformation **TERMINÉS**.
-- ✅ **Frontend** : Types API, Service Client API, et **Navigation/Routage** **TERMINÉS**.
+- ✅ **Frontend** : Types API, Service Client API, **Routage** et **Chargement initial** des projets **TERMINÉS**.
 
-Le focus est maintenant sur le développement de l'interface utilisateur du frontend.
+Le focus est maintenant sur le développement des composants React interactifs pour la gestion des projets (CRUD).

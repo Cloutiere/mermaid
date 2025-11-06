@@ -1,4 +1,5 @@
 // STRUCTURE.md.txt
+// Version 1.1 (Mise à jour post-Routage & Fetch)
 
 # Structure du Projet - Éditeur Visuel Mermaid
 
@@ -11,36 +12,28 @@
 │   │   ├── models.py          # ✅ Modèles SQLAlchemy (Project, SubProject, Node, Relationship, ClassDef)
 │   │   ├── __init__.py        # ✅ Package marker + Factory Pattern
 │   │   ├── schemas.py         # ✅ Schémas Pydantic pour API
-│   │   ├── routes/            # ✅ Routes API RESTful complètes
-│   │   │   ├── projects.py    # ✅ Routes pour Projects
-│   │   │   ├── subprojects.py # ✅ Routes pour SubProjects
-│   │   │   ├── nodes.py       # ✅ Routes pour Nodes et Relationships
-│   │   │   └── mermaid.py     # ✅ Routes pour Import/Export Mermaid
-│   │   └── services/          # ✅ Services métier critiques
-│   │       ├── projects.py    # ✅ Logique métier Project (manquant dans l'historique mais nécessaire)
-│   │       ├── subprojects.py # ✅ Logique métier SubProject (manquant dans l'historique mais nécessaire)
-│   │       ├── nodes.py       # ✅ Logique métier Node + Relationship (manquant dans l'historique mais nécessaire)
-│   │       ├── mermaid_parser.py    # ✅ Service Import: Mermaid → DB
-│   │       └── mermaid_generator.py # ✅ Service Export: DB → Mermaid
-├── migrations/            # ✅ Flask-Migrate
-│   │   └── versions/          # ✅ Scripts de migration générés
+│   │   ├── routes/            # ✅ Routes API RESTful complètes (CRUD + Mermaid)
+│   │   └── services/          # ✅ Services métier critiques (CRUD + Mermaid Transform)
+│   ├── migrations/            # ✅ Flask-Migrate
 │   ├── run.py                 # ✅ Point d'entrée Flask
-│   ├── requirements.txt       # ✅ Dépendances Python installées
-│   └── .flaskenv             # ✅ Configuration Flask
+│   └── requirements.txt       # ✅ Dépendances Python installées
 │
 ├── frontend/
 │   ├── src/
-│   │   ├── components/        # [À DÉVELOPPER] Composants React
-│   │   │   ├── MermaidViewer.tsx    # [TODO] Affichage graphe Mermaid
-│   │   │   ├── NodeEditor.tsx       # [TODO] Éditeur de nœuds
-│   │   │   └── GraphEditor.tsx      # [TODO] Éditeur principal
+│   │   ├── components/        # [À DÉVELOPPER] Composants React interactifs
+│   │   │   ├── ProjectCard.tsx    # [TODO] Carte pour un projet unique
+│   │   │   ├── ProjectForm.tsx    # [TODO] Formulaire de création/édition de projet
+│   │   │   ├── SubProjectCard.tsx # [TODO] Carte pour un sous-projet
+│   │   │   ├── SubProjectForm.tsx # [TODO] Formulaire de création/édition de sous-projet
+│   │   │   ├── MermaidViewer.tsx  # [TODO] Rendu du graphe Mermaid
+│   │   │   └── ConfirmDialog.tsx  # [TODO] Dialogue de confirmation
 │   │   ├── pages/             # ✅ Pages principales de l'application
-│   │   │   ├── ProjectListPage.tsx  # ✅ Page Liste des Projets
-│   │   │   └── GraphEditorPage.tsx  # ✅ Page Éditeur de Graphe
+│   │   │   ├── ProjectListPage.tsx  # ✅ Liste des projets (Routage et Fetch API implémentés)
+│   │   │   └── GraphEditorPage.tsx  # ✅ Page Éditeur de Graphe (Routage fonctionnel)
 │   │   ├── types/             # ✅ Interfaces TypeScript pour API
 │   │   │   └── api.ts         # ✅ Types synchronisés avec Pydantic
 │   │   ├── services/          # ✅ Services frontend
-│   │   │   └── api.ts         # ✅ Client API (axios)
+│   │   │   └── api.ts         # ✅ Client API (axios Wrapper)
 │   │   ├── App.tsx            # ✅ Composant racine (configuration du routage)
 │   │   ├── main.tsx           # ✅ Point d'entrée React (avec BrowserRouter)
 │   │   ├── index.css          # ✅ Styles Tailwind
@@ -48,81 +41,45 @@
 │   ├── index.html             # ✅ Template HTML
 │   ├── package.json           # ✅ Dépendances Node.js installées
 │   ├── tsconfig.json          # ✅ Configuration TypeScript
-│   ├── tsconfig.node.json     # ✅ Config TypeScript pour Vite
 │   ├── vite.config.ts         # ✅ Configuration Vite (proxy API)
-│   ├── tailwind.config.js     # ✅ Configuration Tailwind
-│   └── postcss.config.js      # ✅ Configuration PostCSS
+│   └── tailwind.config.js     # ✅ Configuration Tailwind
 │
 ├── attached_assets/           # Documents de référence
-│   ├── backendappmodels.py_1762371637524.txt  # Modèle SQLModel complet
-│   └── DDA_mermaid_1762371637525.md           # Document d'Architecture
+│   ├── backendappmodels.py_1762371637524.txt
+│   └── DDA_mermaid_1762371637525.md
 │
 ├── .env.example               # ✅ Template variables d'environnement
 ├── .gitignore                 # ✅ Configuration Git
 ├── README.md                  # ✅ Documentation principale
-└── STRUCTURE.md               # ✅ Ce fichier
+└── STRUCTURE.md               # ✅ Ce fichier (Mis à jour)
 ```
 
 ## Statut de Configuration
 
-### ✅ Complété
-- [x] Python 3.11 et Node.js 20 installés
-- [x] PostgreSQL créé avec variables d'environnement
-- [x] **Backend : Toutes les dépendances Python installées**
-- [x] **Frontend : Toutes les dépendances Node.js installées**
-- [x] Arborescence du projet créée
-- [x] Fichiers de configuration créés
-- [x] Points d'entrée créés (run.py, main.tsx)
-- [x] **Modèles SQLAlchemy créés** (backend/app/models.py)
-- [x] **Flask-Migrate initialisé et migration initiale appliquée**
-- [x] **Toutes les tables créées** (project, subproject, node, relationship, classdef)
-- [x] **API RESTful Backend Complète** (CRUD pour toutes les ressources)
-- [x] **Services de transformation Mermaid opérationnels**
-- [x] **Schémas Pydantic backend** implémentés
-- [x] **Types TypeScript frontend** pour les API (`frontend/src/types/api.ts`)
-- [x] **Client API dédié** (`frontend/src/services/api.ts`)
-- [x] **Router et Navigation** (Structure des pages et `react-router-dom`)
+### ✅ Complété (Backend & Infrastructure Frontend)
+- [x] Backend API RESTful (CRUD + Transformation Mermaid)
+- [x] Modèles SQLAlchemy et DB initialisée
+- [x] Types TypeScript API synchronisés
+- [x] Client API (Axios Wrapper)
+- [x] **Routage React fonctionnel (`App.tsx`)**
+- [x] **Chargement initial des projets (`ProjectListPage.tsx`)**
 
-### 🔨 À Développer
+### 🔨 À Développer (Composants UI React)
+Le développement se concentre maintenant sur la couche UI pour interagir avec les données récupérées :
 
-#### Backend (Python/Flask)
-Tous les points critiques sont achevés.
-
-#### Frontend (React/TypeScript)
-1.  **Composants React**
-    *   `MermaidViewer.tsx` : Rendu graphe avec Mermaid.js.
-    *   `NodeEditor.tsx` : Formulaire d'édition de nœud.
-    *   `GraphEditor.tsx` : Interface principale d'édition.
-    *   Implémentation de la logique de synchronisation UI ↔ Backend via `api.ts`.
+1.  **Composants de Gestion de Projet** : `ProjectCard.tsx`, `ProjectForm.tsx`.
+2.  **Composants d'Édition** : `MermaidViewer.tsx`, `MermaidEditor.tsx` (pour la Phase 2).
 
 ## Commandes Utiles
 
-### Développement
 ```bash
-# Backend
+# Démarrer le backend (Port 5001)
 cd backend && python run.py
 
-# Frontend (déjà actif via workflow)
+# Démarrer le frontend (Port 5000)
 cd frontend && npm run dev
-```
-
-### Tests de connectivité
-```bash
-# Tester le backend
-curl http://localhost:5001/api/health
-
-# Vérifier PostgreSQL
-echo $DATABASE_URL
 ```
 
 ## Prochaines Étapes
 
-1. Développer l'interface utilisateur pour la liste des projets.
-2. Développer l'éditeur de graphe (`GraphEditorPage`) et intégrer Mermaid.js.
-
-## Références Techniques
-
-- **Modèle de données complet** : `attached_assets/backendappmodels.py_1762371637524.txt`
-- **Architecture détaillée** : `attached_assets/DDA_mermaid_1762371637525.md`
-- Pydantic: https://docs.pydantic.dev/
-- Mermaid.js: https://mermaid.js.org/
+Poursuite du développement selon le `PLAN_DEVELOPPEMENT_FRONTEND.md`, en commençant par les composants de la `ProjectListPage`.

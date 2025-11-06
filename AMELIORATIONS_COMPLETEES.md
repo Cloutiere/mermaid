@@ -1,4 +1,5 @@
 // AMELIORATIONS_COMPLETEES.md.txt
+// Version 1.1 (Mise à jour post-Routage & Fetch)
 
 # ✅ Améliorations Complétées - [Date Actuelle]
 
@@ -14,11 +15,11 @@ Le backend dispose d'une **API RESTful complète et opérationnelle**, avec :
 - Validation des données avec Pydantic v2
 - Code testé et validé par l'architecte
 
-Le Frontend a franchi deux étapes clés avec la **synchronisation des types API**, la création du **Service Client API dédié**, et l'établissement de la **structure de navigation**. Le développement des composants UI (éditeur de graphe) constitue la prochaine phase majeure.
+Le Frontend a franchi deux étapes clés avec la **synchronisation des types API**, la création du **Service Client API dédié**, et l'établissement de la **structure de navigation et de chargement initial des données**. Le développement des composants UI d'interaction constitue la prochaine phase majeure.
 
 ---
 
-## ✅ Corrections Critiques (Historique)
+## ✅ Corrections Critiques (Historique Backend)
 
 ### 1. Import Circulaire Résolu ✨
 
@@ -42,19 +43,33 @@ Le Frontend a franchi deux étapes clés avec la **synchronisation des types API
 
 ---
 
-## ✅ Fonctionnalités Critiques Implémentées (Backend)
+## ✅ Infrastructure Frontend (Nouvelles Implémentations)
 
-### 3. Services CRUD SubProject & Relations 📦🔗
+### 3. Configuration du Routage React
+**Tâche** : Remplacer le rendu statique de `App.tsx` par la structure de routage de `react-router-dom`.
+**Fichier impacté** : `frontend/src/App.tsx`
+**Statut** : ✅ TERMINÉ
+
+### 4. Chargement Initial des Données
+**Tâche** : Implémentation de la récupération des projets via `apiService` dans `ProjectListPage.tsx`, incluant la gestion des états `loading` et `error`.
+**Fichier impacté** : `frontend/src/pages/ProjectListPage.tsx`
+**Statut** : ✅ TERMINÉ
+
+---
+
+## ✅ Fonctionnalités Critiques Implémentées (Backend - Rappel)
+
+### 5. Services CRUD SubProject & Relations 📦🔗
 
 - **Fichiers créés/modifiés** : `backend/app/services/subprojects.py`, `backend/app/routes/subprojects.py`
 - **Fonctionnalités** : CRUD complet pour `SubProject`, incluant validations et gestion d'erreurs.
 
-### 4. Services CRUD Node & Relationship 🔗
+### 6. Services CRUD Node & Relationship 🔗
 
 - **Fichiers créés/modifiés** : `backend/app/services/nodes.py`, `backend/app/routes/nodes.py`
 - **Fonctionnalités** : CRUD complet pour `Node` et `Relationship`, avec validations croisées (ex: appartenance au même SubProject).
 
-### 5. Services de Transformation Mermaid 🔄
+### 7. Services de Transformation Mermaid 🔄
 
 - **Fichiers créés/modifiés** : `backend/app/services/mermaid_parser.py`, `backend/app/services/mermaid_generator.py`, `backend/app/routes/mermaid.py`
 - **Fonctionnalités** :
@@ -73,11 +88,11 @@ backend/
 │   ├── __init__.py           # Factory Pattern + create_app()
 │   ├── config.py             # Configuration multi-environnement
 │   ├── models.py             # Modèles SQLAlchemy
-│   ├── schemas.py            # Schémas Pydantic ✅ TERMINÉ
+│   ├── schemas.py            # Schémas Pydantic
 │   ├── routes/               # ✅ TERMINÉ
 │   │   ├── projects.py       # ✅ CRUD Project
 │   │   ├── subprojects.py    # ✅ CRUD SubProject
-│   │   └── nodes.py          # ✅ CRUD Node + Relationship
+│   │   ├── nodes.py          # ✅ CRUD Node + Relationship
 │   │   └── mermaid.py        # ✅ Import/Export Mermaid
 │   └── services/             # ✅ TERMINÉ
 │       ├── projects.py       # ✅ Logique métier Project
@@ -112,18 +127,21 @@ backend/
 - ✅ Factory Pattern + Configuration multi-env
 - ✅ CORS sécurisée
 - ✅ Gestion d'erreurs globale
-- ✅ **Tous les schémas Pydantic**
-- ✅ **Tous les services CRUD**
-- ✅ **Toutes les routes API**
-- ✅ **Services de transformation Mermaid (Parsing & Génération)**
+- ✅ Tous les schémas Pydantic
+- ✅ Tous les services CRUD
+- ✅ Toutes les routes API
+- ✅ Services de transformation Mermaid (Parsing & Génération)
 
 ### Frontend
-- ✅ **Types API** (`frontend/src/types/api.ts`) - Synchronisés avec Pydantic
-- ✅ **Client API dédié** (`frontend/src/services/api.ts`) - Wrapper Axios pour appels backend
-- ✅ **Router et Navigation** - Configuration `react-router-dom` et routage dynamique.
+- ✅ Types API (`frontend/src/types/api.ts`) - Synchronisés avec Pydantic
+- ✅ Client API dédié (`frontend/src/services/api.ts`) - Wrapper Axios
+- ✅ **Router et Navigation** - Configuration `react-router-dom` et routage dynamique **TERMINÉ**
+- ✅ **Chargement Initial des Projets** (`ProjectListPage.tsx`) **TERMINÉ**
 - 🔨 **Composants React** (MermaidViewer, NodeEditor, GraphEditor, listes) - *À Développer*
 
-## 🚀 Comment Démarrer
+---
+
+## 🚀 Comment Démarrer la Prochaine Phase
 
 ### Backend (port 5001)
 ```bash
@@ -131,46 +149,27 @@ cd backend
 python run.py
 ```
 
-### Frontend (port 5000 - déjà actif via workflow)
-Le frontend tourne automatiquement !
+### Frontend (port 5000)
+```bash
+cd frontend
+npm run dev
+```
 
 ### Tester l'API
 ```bash
 # Health check
 curl http://localhost:5001/api/health
 
-# Liste des projets
+# Liste des projets (doit retourner une liste vide ou pleine)
 curl http://localhost:5001/api/projects/
-
-# Liste des sous-projets
-curl http://localhost:5001/api/subprojects/
-
-# Liste des nœuds
-curl http://localhost:5001/api/nodes/
-
-# Liste des relations
-curl http://localhost:5001/api/nodes/relationships
 ```
-
----
-
-## 📊 Statistiques
-
-- **Fichiers créés (cette session)** : 2 (GraphEditorPage.tsx, ProjectListPage.tsx)
-- **Fichiers modifiés (cette session)** : 2 (App.tsx, main.tsx)
-- **Fichiers créés (Total)** : [Calculé en interne: 5 + 2] 7
-- **Fichiers modifiés (Total)** : [Calculé en interne: 7 + 2] 9
-- **Endpoints API créés** : 15 nouveaux (5 SubProject, 5 Node, 5 Relationship)
-- **Services métier créés** : 2 (SubProject, Node+Relationship)
-- **Validation** : ✅ Passée par l'architect
 
 ---
 
 ## 🎊 Conclusion
 
-**Votre backend est maintenant production-ready pour les opérations CRUD et le frontend est équipé d'une couche d'accès aux données professionnelle et d'une structure de navigation fonctionnelle.**
+**Le socle technique est complet.** Nous passons maintenant à la construction concrète de l'interface utilisateur (Phase 1.2 du plan), en commençant par la gestion des projets sur la page d'accueil.
 
 **Prochaines étapes recommandées** :
-1. Développer les composants React pour l'interface utilisateur et l'éditeur de graphe.
-
-Bon développement ! 🚀
+1. Développer `ProjectCard.tsx` et `ProjectForm.tsx`.
+2. Intégrer ces composants dans `ProjectListPage.tsx`.
