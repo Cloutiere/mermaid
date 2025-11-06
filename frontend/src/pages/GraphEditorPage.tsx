@@ -1,12 +1,13 @@
 // frontend/src/pages/GraphEditorPage.tsx
-// Version 2.0 (Layout flexible)
+// Version 2.1 (Intégration Import JSON)
 
 import { useParams, useNavigate } from 'react-router-dom'
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import apiService from '@/services/api'
 import type { SubProjectRead, SubProjectCreate } from '@/types/api'
 import MermaidEditor from '@/components/MermaidEditor'
 import MermaidViewer from '@/components/MermaidViewer'
+import ImportContentModal from '@/components/ImportContentModal' // NOUVEAU
 
 // Fonction utilitaire déplacée à l'extérieur pour ne pas être recréée à chaque rendu
 const normalize = (code: string | null | undefined): string => {
@@ -27,7 +28,7 @@ function GraphEditorPage() {
   const { projectId, subprojectId } = useParams<keyof EditorParams>() as EditorParams
   const navigate = useNavigate()
 
-  // --- 1. Gestion des États (Doit être en premier) ---
+  // --- 1. Gestion des États ---
   const [subproject, setSubProject] = useState<SubProjectRead | null>(null)
   const [currentMermaidCode, setCurrentMermaidCode] = useState<string>('')
   const [loading, setLoading] = useState(true)
@@ -36,37 +37,46 @@ function GraphEditorPage() {
   const [error, setError] = useState<string | null>(null)
   const [hasMermaidError, setHasMermaidError] = useState(false)
   const [editorWidthRatio, setEditorWidthRatio] = useState(50) // 50% pour l'éditeur
+  const [showJsonImportModal, setShowJsonImportModal] = useState(false) // NOUVEAU
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const subprojectIdNumber = subprojectId ? Number(subprojectId) : null
 
-  // --- 2. Fonction de Chargement Asynchrone (Hook useEffect) ---
-  useEffect(() => {
-    if (!subprojectIdNumber || isNaN(subprojectIdNumber)) {
-      setError('Erreur de routage: ID du sous-projet invalide ou manquant.')
-      setLoading(false)
-      return
-    }
+  // --- 2. Fonctions de Chargement et Rechargement ---
 
-    const fetchSubProject = async () => {
-      setLoading(true)
+  const refetchSubProject = useCallback(
+    async (silent = false) => {
+      if (!subprojectIdNumber || isNaN(subprojectIdNumber)) {
+        setError('Erreur de routage: ID du sous-projet invalide ou manquant.')
+        if (!silent) setLoading(false)
+        return
+      }
+
+      if (!silent) {
+        setLoading(true)
+      }
       setError(null)
+
       try {
         const data = await apiService.getSubProject(subprojectIdNumber)
         setSubProject(data)
         setCurrentMermaidCode(data.mermaid_definition || '')
+        return data // Retourne les données pour le cas d'un appel non-silent
       } catch (err) {
-        console.error('Échec du chargement du sous-projet:', err)
+        console.error('Échec du chargement/rechargement du sous-projet:', err)
         setError(
           err instanceof Error ? err.message : 'Une erreur inconnue est survenue lors du chargement.'
         )
       } finally {
-        setLoading(false)
+        if (!silent) setLoading(false)
       }
-    }
+    },
+    [subprojectIdNumber]
+  )
 
-    fetchSubProject()
-  }, [subprojectIdNumber])
+  useEffect(() => {
+    refetchSubProject(false)
+  }, [refetchSubProject])
 
   // --- 3. Logique de Détection de Changement (Hooks useMemo) ---
   const isDirty = useMemo(() => {
@@ -188,6 +198,7 @@ function GraphEditorPage() {
     navigate('/')
   }
 
+  // Import Structure (.mmd)
   const handleImportClick = () => {
     fileInputRef.current?.click()
   }
@@ -207,6 +218,13 @@ function GraphEditorPage() {
       reader.readAsText(file)
     }
     if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  // NOUVEAU: Import Content (JSON)
+  const handleJsonImportSuccess = () => {
+    setShowJsonImportModal(false)
+    // AC 1.9 & AC 2.7: Forcer le rechargement du sous-projet pour obtenir la nouvelle mermaid_definition
+    refetchSubProject(true) // Silent reload
   }
 
   return (
@@ -278,6 +296,17 @@ function GraphEditorPage() {
         {/* Action buttons */}
         <div className="flex justify-end space-x-3">
           <button
+            onClick={() => setShowJsonImportModal(true)} // NOUVEAU BOUTON JSON
+            disabled={isSaving || isExporting || loading}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition border ${
+              isSaving || isExporting || loading
+                ? 'bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed'
+                : 'bg-white text-indigo-600 border-indigo-300 hover:bg-indigo-50'
+            }`}
+          >
+            Importer Contenu JSON
+          </button>
+          <button
             onClick={handleImportClick}
             disabled={isSaving || isExporting || loading}
             className={`px-4 py-2 rounded-md text-sm font-medium transition border ${
@@ -286,7 +315,7 @@ function GraphEditorPage() {
                 : 'bg-white text-indigo-600 border-indigo-300 hover:bg-indigo-50'
             }`}
           >
-            Importer (.mmd)
+            Importer Structure (.mmd)
           </button>
           <button
             onClick={handleExport}
@@ -334,6 +363,15 @@ function GraphEditorPage() {
           </div>
         )}
       </main>
+
+      {/* Modal d'Importation de Contenu JSON */}
+      {showJsonImportModal && subproject && (
+        <ImportContentModal
+          subprojectId={subproject.id}
+          onClose={() => setShowJsonImportModal(false)}
+          onImportSuccess={handleJsonImportSuccess}
+        />
+      )}
     </div>
   )
 }
