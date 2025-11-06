@@ -54,6 +54,15 @@ const MermaidViewer: React.FC<MermaidViewerProps> = ({ mermaidCode, onRenderStat
           securityLevel: 'loose',
         })
 
+        // CRITICAL: Validate syntax BEFORE rendering to avoid corrupting Mermaid's state
+        try {
+          await mermaid.parse(mermaidCode)
+          console.log('MermaidViewer: Syntax validation PASSED')
+        } catch (parseError) {
+          console.log('MermaidViewer: Syntax validation FAILED')
+          throw parseError // Re-throw to be caught by outer catch
+        }
+
         // Generate a unique ID for each render to avoid conflicts
         const graphId = `mermaid-graph-${Date.now()}-${Math.random().toString(36).substring(7)}`
 
