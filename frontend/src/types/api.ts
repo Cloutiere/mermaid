@@ -1,5 +1,5 @@
 // frontend/src/types/api.ts
-// Définitions des types TypeScript pour l'API Backend
+// Version 2.0 (Ajout ClassDefCreate et NodeContentImportResponse)
 
 // Type pour le health check
 export interface BackendHealthResponse {
@@ -60,6 +60,7 @@ export type ProjectCreate = Omit<ProjectRead, 'id' | 'subprojects'>
 export type SubProjectCreate = Omit<SubProjectRead, 'id' | 'nodes' | 'relationships' | 'class_defs'>
 export type NodeCreate = Omit<NodeRead, 'id'>
 export type RelationshipCreate = Omit<RelationshipRead, 'id'>
+export type ClassDefCreate = Omit<ClassDefRead, 'id'>
 
 // Type pour l'import Mermaid
 export interface MermaidImportRequest {
@@ -75,4 +76,10 @@ export interface MermaidImportResponse {
     title: string
     mermaid_definition: string
   }[]
+}
+
+// Type pour l'import de contenu de nœuds
+export interface NodeContentImportResponse {
+    updated_count: number;
+    ignored_ids: string[];
 }

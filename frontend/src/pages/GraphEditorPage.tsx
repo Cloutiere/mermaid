@@ -1,5 +1,5 @@
 // frontend/src/pages/GraphEditorPage.tsx
-// 1.6.0 (Ajout de l'import et du bouton retour)
+// Version 2.0 (Layout flexible)
 
 import { useParams, useNavigate } from 'react-router-dom'
 import { useState, useEffect, useMemo, useRef } from 'react'
@@ -10,12 +10,12 @@ import MermaidViewer from '@/components/MermaidViewer'
 
 // Fonction utilitaire déplacée à l'extérieur pour ne pas être recréée à chaque rendu
 const normalize = (code: string | null | undefined): string => {
-  if (typeof code !== 'string') return '';
+  if (typeof code !== 'string') return ''
   // 1. Uniformiser les fins de ligne
-  const unixCode = code.replace(/\r\n/g, '\n');
+  const unixCode = code.replace(/\r\n/g, '\n')
   // 2. Supprimer les espaces blancs de début et de fin
-  return unixCode.trim();
-};
+  return unixCode.trim()
+}
 
 function GraphEditorPage() {
   // Définition des types attendus pour les paramètres d'URL
@@ -35,14 +35,15 @@ function GraphEditorPage() {
   const [isExporting, setIsExporting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [hasMermaidError, setHasMermaidError] = useState(false)
+  const [editorWidthRatio, setEditorWidthRatio] = useState(50) // 50% pour l'éditeur
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const subprojectIdNumber = subprojectId ? Number(subprojectId) : null
 
   // --- 2. Fonction de Chargement Asynchrone (Hook useEffect) ---
   useEffect(() => {
     if (!subprojectIdNumber || isNaN(subprojectIdNumber)) {
-      setError("Erreur de routage: ID du sous-projet invalide ou manquant.")
+      setError('Erreur de routage: ID du sous-projet invalide ou manquant.')
       setLoading(false)
       return
     }
@@ -53,10 +54,12 @@ function GraphEditorPage() {
       try {
         const data = await apiService.getSubProject(subprojectIdNumber)
         setSubProject(data)
-        setCurrentMermaidCode(data.mermaid_definition || '') 
+        setCurrentMermaidCode(data.mermaid_definition || '')
       } catch (err) {
         console.error('Échec du chargement du sous-projet:', err)
-        setError(err instanceof Error ? err.message : 'Une erreur inconnue est survenue lors du chargement.')
+        setError(
+          err instanceof Error ? err.message : 'Une erreur inconnue est survenue lors du chargement.'
+        )
       } finally {
         setLoading(false)
       }
@@ -68,16 +71,16 @@ function GraphEditorPage() {
   // --- 3. Logique de Détection de Changement (Hooks useMemo) ---
   const isDirty = useMemo(() => {
     if (!subproject || loading) return false
-    const originalCode = normalize(subproject.mermaid_definition);
-    const newCode = normalize(currentMermaidCode);
+    const originalCode = normalize(subproject.mermaid_definition)
+    const newCode = normalize(currentMermaidCode)
     return newCode !== originalCode
   }, [currentMermaidCode, subproject, loading])
 
   const isSaveEnabled = useMemo(() => {
-    return !isSaving && !hasMermaidError && !!normalize(currentMermaidCode);
-  }, [isSaving, hasMermaidError, currentMermaidCode]);
+    return !isSaving && !hasMermaidError && !!normalize(currentMermaidCode)
+  }, [isSaving, hasMermaidError, currentMermaidCode])
 
-  const isSaveDisabled = !isSaveEnabled;
+  const isSaveDisabled = !isSaveEnabled
 
   // --- 4. Rendu Conditionnel (Chargement et Erreur) ---
   if (loading) {
@@ -112,6 +115,13 @@ function GraphEditorPage() {
   }
 
   const subProjectTitle = subproject.title || `Sous-Projet ID: ${subprojectId}`
+  const layoutOptions = [
+    { label: 'Vue', ratio: 0 },
+    { label: '25/75', ratio: 25 },
+    { label: '50/50', ratio: 50 },
+    { label: '75/25', ratio: 75 },
+    { label: 'Éditeur', ratio: 100 },
+  ]
 
   // --- 5. Handlers d'Action ---
   const handleSave = async () => {
@@ -121,80 +131,83 @@ function GraphEditorPage() {
     setError(null)
 
     const payload: SubProjectCreate = {
-        project_id: subproject.project_id,
-        title: subproject.title,
-        mermaid_definition: currentMermaidCode, 
-        visual_layout: subproject.visual_layout || null,
+      project_id: subproject.project_id,
+      title: subproject.title,
+      mermaid_definition: currentMermaidCode,
+      visual_layout: subproject.visual_layout || null,
     }
 
     try {
-        const updatedData = await apiService.updateSubProject(subproject.id, payload)
-        setSubProject(updatedData)
-        setCurrentMermaidCode(updatedData.mermaid_definition)
-        console.log("Sauvegarde réussie!", updatedData)
+      const updatedData = await apiService.updateSubProject(subproject.id, payload)
+      setSubProject(updatedData)
+      setCurrentMermaidCode(updatedData.mermaid_definition)
+      console.log('Sauvegarde réussie!', updatedData)
     } catch (err) {
-        console.error("Échec de la sauvegarde:", err)
-        setError(err instanceof Error ? err.message : 'Une erreur inconnue est survenue lors de la sauvegarde.')
+      console.error('Échec de la sauvegarde:', err)
+      setError(
+        err instanceof Error ? err.message : 'Une erreur inconnue est survenue lors de la sauvegarde.'
+      )
     } finally {
-        setIsSaving(false)
+      setIsSaving(false)
     }
   }
 
   const handleExport = async () => {
-    if (!subproject) return;
+    if (!subproject) return
 
-    setIsExporting(true);
-    setError(null);
+    setIsExporting(true)
+    setError(null)
 
     try {
-        const mermaidCodeExported = await apiService.exportMermaid(subproject.id);
+      const mermaidCodeExported = await apiService.exportMermaid(subproject.id)
 
-        const blob = new Blob([mermaidCodeExported], { type: 'text/plain;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
+      const blob = new Blob([mermaidCodeExported], { type: 'text/plain;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
 
-        const fileName = `${subproject.title.replace(/\s+/g, '_')}_export.mmd`;
-        link.href = url;
-        link.setAttribute('download', fileName);
+      const fileName = `${subproject.title.replace(/\s+/g, '_')}_export.mmd`
+      link.href = url
+      link.setAttribute('download', fileName)
 
-        document.body.appendChild(link);
-        link.click();
+      document.body.appendChild(link)
+      link.click()
 
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
     } catch (err) {
-        console.error("Échec de l'exportation:", err);
-        setError(err instanceof Error ? err.message : "Une erreur inconnue est survenue lors de l'exportation.");
+      console.error("Échec de l'exportation:", err)
+      setError(
+        err instanceof Error ? err.message : "Une erreur inconnue est survenue lors de l'exportation."
+      )
     } finally {
-        setIsExporting(false);
+      setIsExporting(false)
     }
-  };
+  }
 
   const handleBack = () => {
-    navigate('/');
-  };
+    navigate('/')
+  }
 
   const handleImportClick = () => {
-    fileInputRef.current?.click();
-  };
+    fileInputRef.current?.click()
+  }
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+    const file = event.target.files?.[0]
     if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            if (e.target?.result && typeof e.target.result === 'string') {
-                setCurrentMermaidCode(e.target.result);
-            }
-        };
-        reader.onerror = () => {
-            setError("Erreur lors de la lecture du fichier.");
-        };
-        reader.readAsText(file);
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        if (e.target?.result && typeof e.target.result === 'string') {
+          setCurrentMermaidCode(e.target.result)
+        }
+      }
+      reader.onerror = () => {
+        setError('Erreur lors de la lecture du fichier.')
+      }
+      reader.readAsText(file)
     }
-    if (fileInputRef.current) fileInputRef.current.value = ''; 
-  };
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 lg:p-8 flex flex-col">
@@ -208,35 +221,63 @@ function GraphEditorPage() {
 
       <header className="mb-6 flex justify-between items-center">
         <div>
-            <h1 className="text-3xl lg:text-4xl font-extrabold text-indigo-700">
-                Éditeur : {subProjectTitle}
-            </h1>
-            <p className="text-md lg:text-lg text-gray-500">
-                ID Projet: {projectId} | ID Sous-Projet: {subprojectId}
-            </p>
+          <h1 className="text-3xl lg:text-4xl font-extrabold text-indigo-700">
+            Éditeur : {subProjectTitle}
+          </h1>
+          <p className="text-md lg:text-lg text-gray-500">
+            ID Projet: {projectId} | ID Sous-Projet: {subprojectId}
+          </p>
         </div>
-         <button
-            onClick={handleBack}
-            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition text-sm font-medium"
-          >
-            &larr; Retour à la liste
+        <button
+          onClick={handleBack}
+          className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition text-sm font-medium"
+        >
+          &larr; Retour à la liste
         </button>
       </header>
 
       {error && (isSaving || isExporting) && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-            <strong className="font-bold">Erreur: </strong>
-            <span className="block sm:inline">{error}</span>
+        <div
+          className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4"
+          role="alert"
+        >
+          <strong className="font-bold">Erreur: </strong>
+          <span className="block sm:inline">{error}</span>
         </div>
       )}
       {isDirty && !isSaving && !hasMermaidError && (
-        <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded relative mb-4" role="alert">
-            <span className="block sm:inline">Modifications non sauvegardées.</span>
+        <div
+          className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded relative mb-4"
+          role="alert"
+        >
+          <span className="block sm:inline">Modifications non sauvegardées.</span>
         </div>
       )}
 
-      <div className="mb-4 flex justify-end space-x-3">
-         <button
+      <div className="mb-4 flex justify-between items-center">
+        {/* Layout controls */}
+        <div className="flex items-center space-x-2">
+          <span className="text-sm font-medium text-gray-600">Affichage:</span>
+          <div className="flex items-center rounded-md border border-gray-300 p-0.5 bg-gray-100">
+            {layoutOptions.map(({ label, ratio }) => (
+              <button
+                key={ratio}
+                onClick={() => setEditorWidthRatio(ratio)}
+                className={`px-3 py-1 text-xs font-semibold rounded ${
+                  editorWidthRatio === ratio
+                    ? 'bg-white text-indigo-600 shadow-sm'
+                    : 'bg-transparent text-gray-500 hover:bg-gray-200'
+                } transition-colors`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Action buttons */}
+        <div className="flex justify-end space-x-3">
+          <button
             onClick={handleImportClick}
             disabled={isSaving || isExporting || loading}
             className={`px-4 py-2 rounded-md text-sm font-medium transition border ${
@@ -247,7 +288,7 @@ function GraphEditorPage() {
           >
             Importer (.mmd)
           </button>
-         <button
+          <button
             onClick={handleExport}
             disabled={isSaving || isExporting || loading}
             className={`px-4 py-2 rounded-md text-sm font-medium transition ${
@@ -260,33 +301,38 @@ function GraphEditorPage() {
           </button>
           <button
             onClick={handleSave}
-            disabled={isSaveDisabled} 
+            disabled={isSaveDisabled}
             className={`px-5 py-2 text-white rounded-md text-sm font-semibold transition ${
-                isSaveDisabled
-                    ? 'bg-indigo-300 cursor-not-allowed'
-                    : 'bg-indigo-600 hover:bg-indigo-700 cursor-pointer' 
+              isSaveDisabled
+                ? 'bg-indigo-300 cursor-not-allowed'
+                : 'bg-indigo-600 hover:bg-indigo-700 cursor-pointer'
             }`}
           >
             {isSaving ? 'Sauvegarde...' : hasMermaidError ? 'Erreur de syntaxe' : 'Sauvegarder'}
           </button>
+        </div>
       </div>
 
-      <main className="flex-grow grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-200px)]">
-        <div className="h-full flex flex-col">
-           <h2 className="text-lg font-semibold text-gray-700 mb-2">Éditeur Mermaid</h2>
-           <div className="flex-grow">
-             <MermaidEditor code={currentMermaidCode} onChange={setCurrentMermaidCode} />
-           </div>
-        </div>
-        <div className="h-full flex flex-col">
-           <h2 className="text-lg font-semibold text-gray-700 mb-2">Visualiseur</h2>
-           <div className="flex-grow">
-            <MermaidViewer 
-              mermaidCode={currentMermaidCode}
-              onRenderStateChange={setHasMermaidError}
-            />
-           </div>
-        </div>
+      <main className="flex-grow flex flex-row gap-6 h-[calc(100vh-240px)]">
+        {editorWidthRatio > 0 && (
+          <div className="h-full flex flex-col" style={{ flexBasis: `${editorWidthRatio}%` }}>
+            <h2 className="text-lg font-semibold text-gray-700 mb-2">Éditeur Mermaid</h2>
+            <div className="flex-grow">
+              <MermaidEditor code={currentMermaidCode} onChange={setCurrentMermaidCode} />
+            </div>
+          </div>
+        )}
+        {editorWidthRatio < 100 && (
+          <div className="h-full flex flex-col" style={{ flexBasis: `${100 - editorWidthRatio}%` }}>
+            <h2 className="text-lg font-semibold text-gray-700 mb-2">Visualiseur</h2>
+            <div className="flex-grow">
+              <MermaidViewer
+                mermaidCode={currentMermaidCode}
+                onRenderStateChange={setHasMermaidError}
+              />
+            </div>
+          </div>
+        )}
       </main>
     </div>
   )

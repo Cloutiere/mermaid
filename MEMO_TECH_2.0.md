@@ -202,3 +202,57 @@ Toutes les données sont sérialisées en entrée et en sortie via les schémas 
 #### 4. Intégration
 
 Le Blueprint a été enregistré dans `backend/app/__init__.py` sous le chemin `/api/classdefs`, ce qui rend les nouvelles routes immédiatement accessibles.
+
+### Résumé Technique
+
+**Titre :** Mémo Technique - Commit `feat(frontend): implement flexible layout, zoom/pan, and v2.0 API client`
+
+**Date :** 24/05/2024
+
+**Auteur :** Votre Codeur Sénior
+
+**Contexte :** Ce commit marque une évolution significative de l'interface utilisateur de l'éditeur de graphes (FNS 3) et aligne le client API sur les nouvelles fonctionnalités du backend (V2.0). L'objectif était double : améliorer drastiquement l'ergonomie de l'éditeur et préparer le terrain pour l'intégration des fonctionnalités de gestion des styles (`ClassDef`) et d'importation de contenu.
+
+---
+
+#### **1. Réalisations Clés**
+
+1.  **Amélioration Majeure de l'UX (FNS 3) :**
+    *   **Layout Flexible :** L'éditeur et le visualiseur ne sont plus contraints à une vue statique 50/50. L'utilisateur peut désormais ajuster dynamiquement la largeur de chaque panneau (y compris les masquer complètement) pour se concentrer soit sur l'écriture du code, soit sur la visualisation du graphe.
+    *   **Navigation par Zoom/Pan :** Le visualiseur de graphes intègre désormais des contrôles de zoom (via la molette de la souris) et de déplacement (panoramique via clic-glisser), ce qui est essentiel pour naviguer dans des diagrammes complexes.
+
+2.  **Mise à niveau du Client API (V2.0) :**
+    *   Le service `apiService` a été étendu pour supporter l'intégralité du cycle de vie CRUD pour les entités `ClassDef`.
+    *   Une nouvelle méthode a été ajoutée pour communiquer avec le endpoint d'importation de contenu de nœuds.
+    *   Les types TypeScript (`types/api.ts`) ont été mis à jour pour garantir la sécurité de type de bout en bout pour ces nouvelles opérations.
+
+---
+
+#### **2. Détails Techniques par Module**
+
+*   **Gestion des Dépendances (`package.json`) :**
+    *   Ajout de la dépendance `react-zoom-pan-pinch@^3.0.0`. Cette bibliothèque a été choisie pour sa légèreté, sa performance et sa facilité d'intégration avec React pour fournir les fonctionnalités de zoom et de pan.
+
+*   **Types de l'API (`frontend/src/types/api.ts`) :**
+    *   Ajout de l'interface `NodeContentImportResponse` pour typer la réponse du backend lors de l'importation de contenu JSON, assurant que nous traitons correctement le nombre de succès et les IDs ignorés.
+    *   Vérification et confirmation de la présence du type `ClassDefCreate` pour les opérations de création/mise à jour des styles, maintenant la cohérence avec les schémas Pydantic du backend.
+
+*   **Service API (`frontend/src/services/api.ts`) :**
+    *   **Module `ClassDef` :** Implémentation de quatre nouvelles méthodes (`getClassDefs`, `createClassDef`, `updateClassDef`, `deleteClassDef`). Ces méthodes s'appuient sur les abstractions CRUD génériques (`get`, `post`, `put`, `delete`), ce qui garantit un code maintenable et cohérent.
+    *   **Module `Node` :** Ajout de la méthode `importNodeContent` qui prend en charge l'envoi d'un dictionnaire (`Record<string, string>`) vers le backend pour la mise à jour en masse du contenu textuel des nœuds.
+
+*   **Composant `MermaidViewer.tsx` :**
+    *   Intégration de la bibliothèque `react-zoom-pan-pinch`. Le rendu SVG de Mermaid est maintenant encapsulé dans les composants `TransformWrapper` et `TransformComponent`.
+    *   Cette intégration a été réalisée sans perturber la logique de rendu asynchrone existante. Le `div` cible (`containerRef`) est maintenant un enfant du `TransformComponent`, rendant le contenu SVG généré immédiatement manipulable.
+    *   Le conteneur parent conserve un `overflow: hidden` pour délimiter proprement la zone de zoom/pan.
+
+*   **Page `GraphEditorPage.tsx` :**
+    *   **Gestion d'état :** Introduction d'un nouvel état `editorWidthRatio` pour contrôler la largeur relative de l'éditeur de code.
+    *   **Layout dynamique :** Remplacement de la grille statique Tailwind (`lg:grid-cols-2`) par un conteneur `flexbox`. La largeur de chaque panneau (éditeur et visualiseur) est désormais définie dynamiquement via la propriété de style `flexBasis`, qui est directement liée à l'état `editorWidthRatio`.
+    *   **Interface de contrôle :** Ajout d'une barre d'outils simple permettant à l'utilisateur de sélectionner des répartitions prédéfinies (0%, 25%, 50%, 75%, 100%), ce qui met à jour l'état `editorWidthRatio` et déclenche un re-rendu du layout. Le rendu des panneaux est conditionnel pour optimiser les performances (un panneau avec une largeur de 0% n'est pas rendu dans le DOM).
+
+---
+
+#### **3. Conclusion et Impact**
+
+Ce commit améliore significativement la qualité de vie de l'utilisateur final en rendant l'interface plus flexible et plus puissante. Sur le plan architectural, il complète la connectivité du frontend avec l'API V2.0, débloquant le développement des prochaines fonctionnalités prévues au backlog, notamment l'éditeur de styles visuels et l'interface d'importation de données JSON.
