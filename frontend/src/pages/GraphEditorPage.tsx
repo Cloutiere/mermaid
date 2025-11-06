@@ -1,5 +1,5 @@
 // frontend/src/pages/GraphEditorPage.tsx
-// 1.4.0 (Nettoyage de la logique de contournement 'viewerKey')
+// 1.4.1 (Correction de l'ordre de normalisation 'isDirty')
 
 import { useParams, useNavigate } from 'react-router-dom'
 import { useState, useEffect, useMemo } from 'react'
@@ -25,9 +25,6 @@ function GraphEditorPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [hasMermaidError, setHasMermaidError] = useState(false) // État pour les erreurs de rendu Mermaid
-
-  // SUPPRIMÉ : l'état viewerKey et son useEffect associé ne sont plus nécessaires.
-  // const [viewerKey, setViewerKey] = useState(0)
 
   const subprojectIdNumber = subprojectId ? Number(subprojectId) : null
 
@@ -58,14 +55,25 @@ function GraphEditorPage() {
     fetchSubProject()
   }, [subprojectIdNumber])
 
-  // SUPPRIMÉ : le useEffect pour forcer le remontage n'est plus utile.
-  // Le nouveau MermaidViewer gère son état interne de manière robuste.
-
   // --- 3. Logique de Détection de Changement (Dirty State) ---
   const isDirty = useMemo(() => {
     if (!subproject || loading) return false
-    // Compare le code actuel avec le code chargé original
-    return currentMermaidCode !== subproject.mermaid_definition
+
+    // Fonction de normalisation pour la comparaison:
+    const normalize = (code: string | null | undefined): string => {
+        if (typeof code !== 'string') return '';
+        // NOUVEL ORDRE: 
+        // 1. Uniformiser les fins de ligne de Windows (\r\n) à Unix (\n) PARTOUT dans la chaîne.
+        const unixCode = code.replace(/\r\n/g, '\n');
+        // 2. Supprimer les espaces blancs de début et de fin sur la chaîne uniformisée.
+        return unixCode.trim();
+    };
+
+    const originalCode = normalize(subproject.mermaid_definition);
+    const newCode = normalize(currentMermaidCode);
+
+    // Compare les codes normalisés
+    return newCode !== originalCode
   }, [currentMermaidCode, subproject, loading])
 
   // --- 4. Rendu Conditionnel (Chargement et Erreur) ---
@@ -113,13 +121,16 @@ function GraphEditorPage() {
     const payload: SubProjectCreate = {
         project_id: subproject.project_id,
         title: subproject.title,
-        mermaid_definition: currentMermaidCode,
+        // Sauvegarde du code actuel (non normalisé)
+        mermaid_definition: currentMermaidCode, 
         visual_layout: subproject.visual_layout || null,
     }
 
     try {
         const updatedData = await apiService.updateSubProject(subproject.id, payload)
+        // Met à jour l'état du sous-projet avec les données du serveur
         setSubProject(updatedData)
+        // Met à jour le code actuel avec la version du serveur (important pour réinitialiser 'isDirty')
         setCurrentMermaidCode(updatedData.mermaid_definition)
         console.log("Sauvegarde réussie!", updatedData)
     } catch (err) {
@@ -185,7 +196,6 @@ function GraphEditorPage() {
            <h2 className="text-lg font-semibold text-gray-700 mb-2">Visualiseur</h2>
            <div className="flex-grow">
             <MermaidViewer 
-              // SUPPRIMÉ: la prop `key` n'est plus nécessaire.
               mermaidCode={currentMermaidCode}
               onRenderStateChange={setHasMermaidError}
             />
