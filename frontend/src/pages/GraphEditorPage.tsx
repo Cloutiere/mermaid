@@ -1,5 +1,5 @@
 // frontend/src/pages/GraphEditorPage.tsx
-// 1.4.1 (Correction de l'ordre de normalisation 'isDirty')
+// 1.4.3 (Correction critique de l'ordre des Hooks)
 
 import { useParams, useNavigate } from 'react-router-dom'
 import { useState, useEffect, useMemo } from 'react'
@@ -7,6 +7,15 @@ import apiService from '@/services/api'
 import type { SubProjectRead, SubProjectCreate } from '@/types/api'
 import MermaidEditor from '@/components/MermaidEditor'
 import MermaidViewer from '@/components/MermaidViewer'
+
+// Fonction utilitaire déplacée à l'extérieur pour ne pas être recréée à chaque rendu
+const normalize = (code: string | null | undefined): string => {
+  if (typeof code !== 'string') return '';
+  // 1. Uniformiser les fins de ligne
+  const unixCode = code.replace(/\r\n/g, '\n');
+  // 2. Supprimer les espaces blancs de début et de fin
+  return unixCode.trim();
+};
 
 function GraphEditorPage() {
   // Définition des types attendus pour les paramètres d'URL
@@ -18,7 +27,7 @@ function GraphEditorPage() {
   const { projectId, subprojectId } = useParams<keyof EditorParams>() as EditorParams
   const navigate = useNavigate()
 
-  // --- 1. Gestion des États ---
+  // --- 1. Gestion des États (Doit être en premier) ---
   const [subproject, setSubProject] = useState<SubProjectRead | null>(null)
   const [currentMermaidCode, setCurrentMermaidCode] = useState<string>('')
   const [loading, setLoading] = useState(true)
@@ -28,7 +37,7 @@ function GraphEditorPage() {
 
   const subprojectIdNumber = subprojectId ? Number(subprojectId) : null
 
-  // --- 2. Fonction de Chargement Asynchrone ---
+  // --- 2. Fonction de Chargement Asynchrone (Hook useEffect) ---
   useEffect(() => {
     if (!subprojectIdNumber || isNaN(subprojectIdNumber)) {
       setError("Erreur de routage: ID du sous-projet invalide ou manquant.")
@@ -55,19 +64,11 @@ function GraphEditorPage() {
     fetchSubProject()
   }, [subprojectIdNumber])
 
-  // --- 3. Logique de Détection de Changement (Dirty State) ---
+  // --- 3. Logique de Détection de Changement (Hooks useMemo) - DOIVENT ÊTRE AVANT LES RETOURS CONDITIONNELS ---
+
+  // 3a. Détection des changements (Dirty State)
   const isDirty = useMemo(() => {
     if (!subproject || loading) return false
-
-    // Fonction de normalisation pour la comparaison:
-    const normalize = (code: string | null | undefined): string => {
-        if (typeof code !== 'string') return '';
-        // NOUVEL ORDRE: 
-        // 1. Uniformiser les fins de ligne de Windows (\r\n) à Unix (\n) PARTOUT dans la chaîne.
-        const unixCode = code.replace(/\r\n/g, '\n');
-        // 2. Supprimer les espaces blancs de début et de fin sur la chaîne uniformisée.
-        return unixCode.trim();
-    };
 
     const originalCode = normalize(subproject.mermaid_definition);
     const newCode = normalize(currentMermaidCode);
@@ -76,7 +77,19 @@ function GraphEditorPage() {
     return newCode !== originalCode
   }, [currentMermaidCode, subproject, loading])
 
-  // --- 4. Rendu Conditionnel (Chargement et Erreur) ---
+  // 3b. Détermination de l'activation du bouton de sauvegarde (NOUVEAU)
+  const isSaveEnabled = useMemo(() => {
+    // Le bouton est activé si :
+    // 1. On n'est pas en train de sauvegarder (!isSaving)
+    // 2. Il n'y a pas d'erreur de syntaxe (!hasMermaidError)
+    // 3. Le code édité n'est pas vide (!!normalize(currentMermaidCode))
+    return !isSaving && !hasMermaidError && !!normalize(currentMermaidCode);
+  }, [isSaving, hasMermaidError, currentMermaidCode]);
+
+  // Déterminer la variable de désactivation finale
+  const isDisabled = !isSaveEnabled;
+
+  // --- 4. Rendu Conditionnel (Chargement et Erreur) - DOIT ÊTRE APRÈS TOUS LES HOOKS ---
 
   if (loading) {
     return (
@@ -130,7 +143,7 @@ function GraphEditorPage() {
         const updatedData = await apiService.updateSubProject(subproject.id, payload)
         // Met à jour l'état du sous-projet avec les données du serveur
         setSubProject(updatedData)
-        // Met à jour le code actuel avec la version du serveur (important pour réinitialiser 'isDirty')
+        // Met à jour le code actuel avec la version du serveur (important pour réinitialiser 'isDirty' et l'état général)
         setCurrentMermaidCode(updatedData.mermaid_definition)
         console.log("Sauvegarde réussie!", updatedData)
     } catch (err) {
@@ -159,6 +172,12 @@ function GraphEditorPage() {
             <span className="block sm:inline">{error}</span>
         </div>
       )}
+      {/* Affichage des avertissements de modification non sauvegardée */}
+      {isDirty && !isSaving && !hasMermaidError && (
+        <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded relative mb-4" role="alert">
+            <span className="block sm:inline">Modifications non sauvegardées.</span>
+        </div>
+      )}
 
       {/* Barre d'actions */}
       <div className="mb-4 flex justify-end space-x-3">
@@ -170,9 +189,10 @@ function GraphEditorPage() {
           </button>
           <button
             onClick={handleSave}
-            disabled={!isDirty || isSaving || hasMermaidError}
+            // Utilise la variable isDisabled, qui est l'inverse de isSaveEnabled
+            disabled={isDisabled} 
             className={`px-5 py-2 text-white rounded-md text-sm font-semibold transition ${
-                !isDirty || isSaving || hasMermaidError
+                isDisabled
                     ? 'bg-indigo-300 cursor-not-allowed'
                     : 'bg-indigo-600 hover:bg-indigo-700 cursor-pointer' 
             }`}
