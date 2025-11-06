@@ -1,4 +1,8 @@
+// frontend/src/App.tsx
+// Version 1.0
+
 import { useEffect, useState } from 'react'
+import type { BackendHealthResponse } from './types/api' // Utilisation de 'import type' selon la règle N°2
 
 function App() {
   const [backendStatus, setBackendStatus] = useState<string>('checking...')
@@ -6,7 +10,7 @@ function App() {
   useEffect(() => {
     fetch('/api/health')
       .then(res => res.json())
-      .then(data => setBackendStatus(data.message))
+      .then((data: BackendHealthResponse) => setBackendStatus(data.message)) // Typage de la réponse
       .catch(() => setBackendStatus('Backend not reachable'))
   }, [])
 
