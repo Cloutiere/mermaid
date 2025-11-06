@@ -1,11 +1,11 @@
 // frontend/CONFIGURATION_COMPLETE.md
-// Version 1.5 (Finalisation de l'Éditeur Frontend)
+// Version 1.6 (Finalisation de l'Éditeur Frontend et des utilitaires)
 
 # 🎉 Configuration Complète - Projet Éditeur Visuel Mermaid
 
 ## ✅ Configuration Terminée avec Succès
 
-Votre environnement est **100% opérationnel** pour les développements backend, et la **Phase 2 (Éditeur de Graphe)** est désormais **complètement achevée** côté frontend !
+Votre environnement est **100% opérationnel** pour les développements backend, et la **Phase 2 (Éditeur de Graphe)** et la **Phase 3 (Utilitaires)** sont désormais **complètement achevées** côté frontend !
 
 ---
 
@@ -21,15 +21,6 @@ Toutes les tables ont été créées dans PostgreSQL avec succès :
 | **node** | Nœuds individuels du graphe | ✅ Créée |
 | **relationship** | Liens dirigés entre nœuds | ✅ Créée |
 | **classdef** | Définitions de style Mermaid | ✅ Créée |
-
-### Modèles SQLAlchemy
-Tous les modèles sont définis dans `backend/app/models.py`. Ils ont été créés et leur schéma appliqué via Flask-Migrate.
-
-### Relations et Contraintes
-- ✅ Toutes les clés étrangères configurées
-- ✅ Contraintes d'unicité (subproject_id + mermaid_id, subproject_id + name)
-- ✅ Cascades (delete-orphan) pour l'intégrité référentielle
-- ✅ Index sur les colonnes fréquemment recherchées
 
 ---
 
@@ -66,24 +57,6 @@ cd backend
 flask db upgrade
 ```
 
-### Vérifier la révision actuelle
-```bash
-cd backend
-flask db current
-```
-
-### Voir l'historique
-```bash
-cd backend
-flask db history
-```
-
-### Revenir en arrière
-```bash
-cd backend
-flask db downgrade
-```
-
 ---
 
 ## 📁 Structure des Fichiers Importants
@@ -92,15 +65,13 @@ flask db downgrade
 ```
 backend/
 ├── run.py                  # Point d'entrée Flask (à lancer)
-├── app/                    # Modules applicatifs Python
+├── app/                    
 │   ├── models.py          # ✅ Modèles SQLAlchemy (Complet)
 │   ├── __init__.py        # ✅ Factory Pattern
 │   ├── schemas.py         # ✅ Schémas Pydantic
 │   ├── routes/            # ✅ Routes API RESTful complètes
 │   └── services/          # ✅ Services métier critiques
-├── migrations/             # ✅ Flask-Migrate
-│   └── versions/           # ✅ Scripts de migration générés
-└── requirements.txt        # ✅ Dépendances Python installées
+└── ...
 ```
 
 ### Frontend
@@ -108,41 +79,25 @@ backend/
 frontend/
 ├── src/
 │   ├── components/        # ✅ Composants React
-│   │   ├── ProjectCard.tsx    # ✅ Implémenté (CRUD Projet + SubProject UI)
-│   │   ├── ProjectForm.tsx    # ✅ Implémenté (CRUD Projet)
-│   │   ├── SubProjectCard.tsx # ✅ Implémenté (UI SubProject)
-│   │   ├── SubProjectForm.tsx # ✅ Implémenté (UI SubProject)
-│   │   ├── MermaidViewer.tsx  # ✅ Implémenté (Rendu fonctionnel)
-│   │   ├── MermaidEditor.tsx  # ✅ Implémenté (Éditeur fonctionnel)
-│   │   └── ConfirmDialog.tsx  # [TODO]
+│   │   ├── ProjectCard.tsx    # ✅ Mis à jour (Intégration ConfirmDialog)
+│   │   ├── SubProjectCard.tsx # ✅ Mis à jour (Intégration ConfirmDialog)
+│   │   ├── MermaidViewer.tsx  # ✅ TERMINÉ
+│   │   ├── MermaidEditor.tsx  # ✅ TERMINÉ
+│   │   └── ConfirmDialog.tsx  # ✅ TERMINÉ (Utilitaires complétés)
 │   ├── pages/
-│   │   ├── ProjectListPage.tsx  # ✅ Liste des projets (CRUD Projet/SubProject UI fonctionnel)
-│   │   └── GraphEditorPage.tsx  # ✅ TERMINÉ (Éditeur, Visualisation, Sauvegarde, Export, Import, Navigation)
+│   │   ├── ProjectListPage.tsx  # ✅ TERMINÉ
+│   │   └── GraphEditorPage.tsx  # ✅ TERMINÉ
 │   ├── types/
-│   │   └── api.ts         # ✅ Types synchronisés avec Pydantic
-│   ├── services/
-│   │   └── api.ts         # ✅ Client API dédié (Axios Wrapper)
-│   ├── App.tsx            # ✅ Composant racine (configuration du routage)
-│   ├── main.tsx           # ✅ Point d'entrée React (avec BrowserRouter)
-│   ├── index.css          # ✅ Styles Tailwind
-│   └── vite-env.d.ts      # ✅ Types Vite
-├── index.html             # ✅ Template HTML
-├── package.json           # ✅ Dépendances Node.js installées
-├── tsconfig.json          # ✅ Configuration TypeScript
-├── vite.config.ts         # ✅ Configuration Vite (proxy API)
-└── tailwind.config.js     # ✅ Configuration Tailwind
+│   │   └── api.ts         # ✅ Types
+│   └── services/
+│       └── api.ts         # ✅ Client API
+└── ...
 ```
 
 ---
 
-## 🎯 Prochaines Étapes de Développement
+## 🎯 Statut Final
 
 **Backend** : 🟢 TERMINÉ.
-**Frontend** : La Phase 2 est achevée. Prochaine cible : Phase 3.1 (Composant utilitaire `ConfirmDialog.tsx`).
-
----
-
-## 📚 Documentation de Référence
-
-- **DDA** : `attached_assets/DDA_mermaid_1762371637525.md`
-- **Plans de développement** : `PLAN_DEVELOPPEMENT_FRONTEND.md`
+**Frontend** : 🟢 TERMINÉ.
+L'infrastructure de base et toutes les fonctionnalités de gestion de projet/sous-projet et d'édition de graphe (CRUD, Import/Export) sont achevées.
