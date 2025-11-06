@@ -6,8 +6,8 @@ from werkzeug.exceptions import NotFound, BadRequest
 from sqlalchemy.exc import IntegrityError
 
 from app import db
-from app.models import Node, SubProject, Relationship # Import Relationship for cascade delete checks if needed
-from app.schemas import NodeCreate, NodeRead # Import schemas for validation and reading
+from app.models import Node, SubProject, Relationship
+from app.schemas import NodeCreate, NodeRead, RelationshipCreate, RelationshipRead
 
 # --- Services pour Node ---
 
@@ -20,7 +20,7 @@ def get_all_nodes(subproject_id: Optional[int] = None) -> List[Node]:
         # if subproject is None:
         #     raise NotFound(f"SubProject with ID {subproject_id} not found.")
         query = query.where(Node.subproject_id == subproject_id)
-    return db.session.execute(query).scalars().all()
+    return list(db.session.execute(query).scalars().all())
 
 
 def get_node_by_id(node_id: int) -> Node:
@@ -42,7 +42,7 @@ def create_node(data: NodeCreate) -> Node:
     title = data.title if data.title is not None else data.mermaid_id
     text_content = data.text_content if data.text_content is not None else data.mermaid_id
 
-    node = Node(
+    node = Node(  # type: ignore[call-arg]
         subproject_id=data.subproject_id,
         mermaid_id=data.mermaid_id,
         title=title,
@@ -117,7 +117,7 @@ def get_all_relationships(subproject_id: Optional[int] = None) -> List[Relations
         # if subproject is None:
         #     raise NotFound(f"SubProject with ID {subproject_id} not found.")
         query = query.where(Relationship.subproject_id == subproject_id)
-    return db.session.execute(query).scalars().all()
+    return list(db.session.execute(query).scalars().all())
 
 
 def get_relationship_by_id(relationship_id: int) -> Relationship:
@@ -154,7 +154,7 @@ def create_relationship(data: RelationshipCreate) -> Relationship:
     if data.source_node_id == data.target_node_id:
         raise BadRequest("Source and target nodes cannot be the same.")
 
-    relationship = Relationship(
+    relationship = Relationship(  # type: ignore[call-arg]
         subproject_id=data.subproject_id,
         source_node_id=data.source_node_id,
         target_node_id=data.target_node_id,

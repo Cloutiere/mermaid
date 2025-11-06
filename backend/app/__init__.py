@@ -41,7 +41,7 @@ def handle_api_error(e):
     return jsonify({'error': message, 'status_code': status_code}), status_code
 
 
-def create_app(config_name=None):
+def create_app(config_name: str | None = None):
     """
     Fonction d'usine pour créer l'application Flask.
     """

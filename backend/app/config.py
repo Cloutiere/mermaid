@@ -74,7 +74,7 @@ config_by_name = dict(
     production=ProductionConfig
 )
 
-def get_config(config_name: str = None):
+def get_config(config_name: str | None = None):
     """
     Récupère l'objet de configuration approprié.
     Si config_name est None, utilise la variable d'environnement FLASK_ENV.

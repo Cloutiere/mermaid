@@ -27,7 +27,7 @@ def get_all_subprojects(project_id: Optional[int] = None) -> List[SubProject]:
         query = query.filter(SubProject.project_id == project_id)
 
     subprojects = db.session.execute(query).scalars().all()
-    return subprojects
+    return list(subprojects)
 
 def get_subproject_by_id(subproject_id: int) -> SubProject:
     """Récupère un sous-projet spécifique par son ID."""
@@ -67,7 +67,7 @@ def create_subproject(subproject_data: SubProjectCreate) -> SubProject:
     if existing_subproject:
         raise BadRequest(f"SubProject with title '{subproject_data.title}' already exists for Project ID {subproject_data.project_id}.")
 
-    new_subproject = SubProject(
+    new_subproject = SubProject(  # type: ignore[call-arg]
         project_id=subproject_data.project_id,
         title=subproject_data.title,
         mermaid_definition=subproject_data.mermaid_definition,
