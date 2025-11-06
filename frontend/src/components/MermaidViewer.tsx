@@ -47,6 +47,13 @@ const MermaidViewer: React.FC<MermaidViewerProps> = ({ mermaidCode, onRenderStat
 
     const renderGraph = async () => {
       try {
+        // CRITICAL: Re-initialize Mermaid to clear any corrupted internal state from previous errors
+        mermaid.initialize({
+          startOnLoad: false,
+          theme: 'default',
+          securityLevel: 'loose',
+        })
+
         // Generate a unique ID for each render to avoid conflicts
         const graphId = `mermaid-graph-${Date.now()}-${Math.random().toString(36).substring(7)}`
 
