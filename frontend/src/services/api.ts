@@ -202,9 +202,9 @@ class ApiService {
     subprojectId: number,
     contentMap: Record<string, string>
   ): Promise<NodeContentImportResponse> {
-    return this.post<NodeContentImportResponse, typeof contentMap>(
+    return this.post<NodeContentImportResponse, { content_map: Record<string, string> }>(
       `/nodes/import_content/${subprojectId}`,
-      contentMap
+      { content_map: contentMap }
     )
   }
 
