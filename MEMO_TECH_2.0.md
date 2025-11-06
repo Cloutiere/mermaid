@@ -155,3 +155,50 @@ La persistance de la direction du graphe est maintenant active. Un graphe import
 2.  **Validation de la Fonctionnalité :** L'équipe de QA ou de développement peut procéder aux tests de bout en bout pour valider le cycle de vie complet d'un SubProject avec des directions de graphe variables (importation, modification, sauvegarde, rechargement).
 
 La migration est terminée. La fondation de données est prête pour la suite du développement de la V2.0.
+
+### Mémorandum Technique : Implémentation du CRUD `ClassDef` (Gestion des Styles)
+
+**Statut du Commit Logique :** Fini (Commit 2/N)
+**Objectif Atteint :** Implémentation complète de l'API CRUD pour l'entité `ClassDef`, incluant toutes les garanties d'intégrité des données requises (AC 2.4, 2.7, 2.8).
+
+#### 1. Fichiers et Rôles
+
+| Chemin du Fichier | Rôle | Modifications Clés |
+| :--- | :--- | :--- |
+| `backend/app/services/classdefs.py` | Logique Métier (Service) | Implémentation du CRUD transactionnel. Gestion de l'unicité et de la cohérence des références. |
+| `backend/app/routes/classdefs.py` | Couche Présentation (Routes) | Création du Blueprint `classdefs_bp` avec les endpoints RESTful (GET, POST, PUT, DELETE). Gestion de la sérialisation Pydantic. |
+| `backend/app/__init__.py` | Architecture Applicative | Enregistrement du `classdefs_bp` sous le préfixe `/api/classdefs`. |
+
+#### 2. Service Layer (`backend/app/services/classdefs.py`)
+
+Ce service est le cœur de la logique, assurant l'intégrité des données via plusieurs mécanismes :
+
+##### 2.1. Cohérence des Noms (AC 2.8 - Unicité)
+Les fonctions `create_classdef` et `update_classdef` intègrent une vérification d'unicité. Une `ClassDef` ne peut pas avoir le même `name` qu'une autre au sein du même `SubProject`. Si une duplication est détectée lors de la création ou d'une tentative de renommage, une exception `Conflict` est levée.
+
+##### 2.2. Cohérence de Suppression (AC 2.4 - Références Orphelines)
+La fonction `delete_classdef` gère la problématique des références orphelines de manière efficace :
+1.  Elle identifie le nom (`name`) de la `ClassDef` à supprimer.
+2.  Elle exécute une instruction `SQLAlchemy update` en masse (`sqlalchemy_update(Node)`) pour mettre à jour tous les `Node.style_class_ref` du `SubProject` correspondant qui pointaient vers ce nom. Ces références sont mises à `None` (`NULL` en base de données).
+3.  L'objet `ClassDef` est ensuite supprimé (`db.session.delete(classdef)`).
+
+Cette approche garantit que la suppression est atomique et maintient l'intégrité référentielle sans avoir à charger et mettre à jour individuellement tous les nœuds, ce qui est crucial pour la performance sur de grands graphes.
+
+##### 2.3. Régénération Mermaid (AC 2.7 - Synchronisation)
+La fonction `generate_mermaid_from_subproject` du service `mermaid_generator` est appelée dans chaque opération de modification (`create_classdef`, `update_classdef`, `delete_classdef`). Le champ `SubProject.mermaid_definition` est mis à jour *avant* le `db.session.commit()`, garantissant que la définition stockée reflète toujours l'état réel des entités immédiatement après toute modification structurelle.
+
+#### 3. Couche Présentation (`backend/app/routes/classdefs.py`)
+
+Le nouveau Blueprint `classdefs_bp` expose les endpoints RESTful standards :
+
+*   **`POST /api/classdefs/`** : Utilise `ClassDefCreate` pour valider l'entrée et retourne `201 Created`.
+*   **`GET /api/classdefs/<id>`** : Récupère par ID, gère `NotFound` si l'entité n'existe pas.
+*   **`PUT /api/classdefs/<id>`** : Met à jour l'entité.
+*   **`DELETE /api/classdefs/<id>`** : Supprime l'entité et retourne `204 No Content`.
+*   **`GET /api/classdefs/?subproject_id=...`** : Permet le filtrage par SubProject.
+
+Toutes les données sont sérialisées en entrée et en sortie via les schémas Pydantic `ClassDefCreate` et `ClassDefRead`.
+
+#### 4. Intégration
+
+Le Blueprint a été enregistré dans `backend/app/__init__.py` sous le chemin `/api/classdefs`, ce qui rend les nouvelles routes immédiatement accessibles.
