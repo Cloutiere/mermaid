@@ -171,3 +171,9 @@ curl http://localhost:5001/api/health
 - ✅ **Typage moderne** : Utilisation de `str | None` au lieu de `Optional[str]`
 - ✅ **Conversions de types** : Ajout de `list()` pour Sequence → List
 - 📝 **Note** : Quelques `# type: ignore` restent pour les limitations connues de SQLAlchemy (selectinload, constructeurs dynamiques)
+
+### 6 novembre 2025 (suite) - Correction import JSON de contenu
+- ✅ **Bug corrigé dans api.ts** : La méthode `importNodeContent` enveloppe maintenant correctement `contentMap` dans `{ content_map: contentMap }`
+- ✅ **Format JSON simplifié validé** : L'utilisateur peut utiliser le format direct `{"632": "texte...", "633": "texte..."}` sans clé wrapper
+- ✅ **Conformité schéma backend** : Alignement avec `NodeContentImport` Pydantic (snake_case)
+- ✅ **Typage TypeScript amélioré** : Generic explicite `{ content_map: Record<string, string> }`
