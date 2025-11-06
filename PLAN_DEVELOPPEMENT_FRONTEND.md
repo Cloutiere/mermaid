@@ -1,5 +1,5 @@
-// PLAN_DEVELOPPEMENT_FRONTEND.md.txt
-// Version 1.1 (Mise à jour post-Routage & Fetch initial)
+// frontend/PLAN_DEVELOPPEMENT_FRONTEND.md.txt
+// Version 1.3 (Mise à jour post-CRUD Projet UI & Next Steps)
 
 # Plan Détaillé de Développement Frontend
 ## Éditeur Visuel de Structure de Récit Mermaid
@@ -10,16 +10,16 @@
 
 ```
 frontend/src/
-├── components/           (À CRÉER)
-│   ├── ProjectCard.tsx        # [TODO] Carte pour un projet (Affichage/Actions)
-│   ├── ProjectForm.tsx        # [TODO] Formulaire de création de projet
+├── components/           (MIS À JOUR)
+│   ├── ProjectCard.tsx        # ✅ Implémenté (CRUD Projet)
+│   ├── ProjectForm.tsx        # ✅ Implémenté (CRUD Projet)
 │   ├── SubProjectCard.tsx     # [TODO] Carte pour un sous-projet
 │   ├── SubProjectForm.tsx     # [TODO] Formulaire de création de sous-projet
 │   ├── MermaidViewer.tsx      # [TODO] Rendu du graphe Mermaid
 │   ├── MermaidEditor.tsx      # [TODO] Éditeur de code Mermaid
 │   └── ConfirmDialog.tsx      # [TODO] Dialogue de confirmation
 ├── pages/
-│   ├── ProjectListPage.tsx    (MIS À JOUR) # ✅ Logique de Fetch/Loading implémentée
+│   ├── ProjectListPage.tsx    (MIS À JOUR) # ✅ CRUD Projet UI implémenté
 │   └── GraphEditorPage.tsx    (À VENIR)    # Routage fonctionnel, chargement des données à implémenter
 ├── services/
 │   └── api.ts                  (EXISTE DÉJÀ)
@@ -34,80 +34,19 @@ frontend/src/
 ### Objectif
 Créer une page complète pour lister, créer et gérer tous les projets.
 
-### Fonctionnalités à Implémenter
+### Fonctionnalités Implémentées
 
 #### 1.1 - Affichage de la Liste des Projets (Fetch & États)
-```typescript
-// Dans ProjectListPage.tsx
-
-// États nécessaires :
-// - projects: ProjectRead[]           // Liste des projets (Initialisation à [])
-// - loading: boolean                  // État de chargement (Initialisation à true)
-// - error: string | null              // Gestion des erreurs (Initialisation à null)
-// - showCreateForm: boolean           // Afficher/masquer le formulaire (Initialisation à false)
-
-// Au montage du composant (useEffect) :
-// 1. Appeler apiService.getProjects() ✅ FAIT
-// 2. Stocker les résultats dans l'état projects ✅ FAIT
-// 3. Gérer le loading et les erreurs ✅ FAIT
-
-// Affichage :
-// - Utiliser une grille (grid) pour afficher les projets
-// - Pour chaque projet, utiliser le composant ProjectCard ✅ PROCHAINE ÉTAPE
-// - Si aucun projet : afficher un message d'invitation à créer ✅ PROCHAINE ÉTAPE
-```
-**Statut de 1.1 : ✅ TERMINÉ (Mécanisme de fetch et gestion d'état en place)**
+**Statut de 1.1 : ✅ TERMINÉ** (Chargement initial dans `ProjectListPage.tsx`)
 
 #### 1.2 - Bouton "Créer un Nouveau Projet"
-```typescript
-// Fonctionnalité :
-// - Bouton visible en haut de page
-// - Au clic : met à jour l'état showCreateForm à true, ouvrant le formulaire (ProjectForm)
-```
-**Statut de 1.2 : 🔨 À FAIRE**
+**Statut de 1.2 : ✅ TERMINÉ** (Intégré dans `ProjectListPage.tsx`, ouvre `ProjectForm`)
 
 #### 1.3 - Composant ProjectCard
-```typescript
-// À créer : components/ProjectCard.tsx
-
-interface ProjectCardProps {
-  project: ProjectRead
-  onDelete: (id: number) => void // Nécessite l'implémentation de la suppression
-  onRefresh: () => void         // Nécessaire pour rafraîchir la liste après une action
-}
-
-// Affichage :
-// - Titre du projet
-// - Nombre de sous-projets (doit être calculé ou récupéré)
-// - Liste des sous-projets (via SubProjectCard)
-// - Bouton "Ajouter un Sous-Projet"
-// - Bouton "Supprimer le Projet" (avec confirmation via ConfirmDialog)
-
-// Actions :
-// - Cliquer sur un sous-projet → navigue vers GraphEditorPage
-// - Supprimer un projet → appelle apiService.deleteProject(id)
-// - Ajouter un sous-projet → ouvre SubProjectForm
-```
-**Statut de 1.3 : 🔨 À FAIRE**
+**Statut de 1.3 : ✅ TERMINÉ** (Implémenté : affichage, navigation placeholder vers SubProject, et appel de la fonction de suppression).
 
 #### 1.4 - Composant ProjectForm
-```typescript
-// À créer : components/ProjectForm.tsx
-
-interface ProjectFormProps {
-  onSuccess: () => void // Fonction de rappel pour rafraîchir la liste après succès
-  onCancel: () => void
-}
-
-// Champs du formulaire :
-// - title: string (obligatoire)
-
-// Actions :
-// - Soumettre → appelle apiService.createProject({ title })
-// - Annuler → ferme le formulaire
-// - Gérer la validation (titre non vide)
-```
-**Statut de 1.4 : 🔨 À FAIRE**
+**Statut de 1.4 : ✅ TERMINÉ** (Implémenté : soumission via `apiService.createProject`, gestion d'état et de succès/annulation).
 
 #### 1.5 - Composant SubProjectCard
 ```typescript
@@ -157,9 +96,9 @@ const DEFAULT_MERMAID = `graph TD
 ## 🎨 Phase 2 : GraphEditorPage - Éditeur de Graphe Mermaid
 
 ### Objectif
-Créer un éditeur complet pour visualiser et modifier les graphes Mermaid.
+Créer un éditeur complet pour visualiser et modifier les graphes Mermaid associés à un `SubProject`.
 
-### Fonctionnalités à Implémenter
+### Fonctionnalités à Implémenter (Dépend de la Phase 1.5 et 1.6)
 
 #### 2.1 - Chargement du SubProject
 ```typescript
@@ -185,9 +124,6 @@ Créer un éditeur complet pour visualiser et modifier les graphes Mermaid.
 #### 2.2 - Visualisation Mermaid
 ```typescript
 // À créer : components/MermaidViewer.tsx
-
-// Installation requise :
-// npm install mermaid
 
 // Implémentation :
 // - Initialiser Mermaid dans useEffect.
@@ -256,7 +192,7 @@ interface MermaidEditorProps {
 ### 3.1 - ConfirmDialog
 ```typescript
 // À créer : components/ConfirmDialog.tsx
-// Modale de confirmation réutilisable (utilisée pour la suppression de projets).
+// Modale de confirmation réutilisable (utilisée pour la suppression de projets et sous-projets).
 ```
 **Statut de 3.1 : 🔨 À FAIRE**
 
@@ -274,18 +210,24 @@ Styles basiques définis pour les cartes, boutons (principal, secondaire, danger
 ```bash
 cd frontend
 npm install mermaid
-npm install @monaco-editor/react  # Optionnel, pour éditeur enrichi
+# Monaco Editor est optionnel, on commencera avec un textarea simple.
 ```
 
 ---
 
 ## 🔄 Flux de Données (Rappel)
 
-### Création d'un Projet
+### Création d'un Projet (✅ TERMINÉ)
 1. Utilisateur clique "Créer un Projet"
 2. Formulaire s'ouvre (ProjectForm)
 3. Soumission → `apiService.createProject({ title })`
 4. Rafraîchir la liste des projets dans `ProjectListPage`
+
+### Création d'un Sous-Projet (À venir)
+1. Utilisateur clique "Ajouter un SubProject" sur `ProjectCard`
+2. Formulaire s'ouvre (SubProjectForm)
+3. Soumission → `apiService.createSubProject(...)`
+4. Rafraîchir la liste des subprojects dans ProjectCard/ProjectListPage.
 
 ### Édition d'un Graphe
 1. Clic sur SubProjectCard
@@ -298,9 +240,10 @@ npm install @monaco-editor/react  # Optionnel, pour éditeur enrichi
 
 ## 🧪 Tests Manuels à Effectuer (Prioritaires)
 
-1. [ ] **Test CRUD Projet** : Créer un projet via `ProjectForm`, vérifier son apparition dans `ProjectListPage`, puis le supprimer.
-2. [ ] **Navigation** : Vérifier que le clic sur un projet (futur `ProjectCard`) mène à `GraphEditorPage`.
-3. [ ] **API Health Check** : Vérifier que le statut reste vert/atteignable.
+1. [x] **Test CRUD Projet** : Créer un projet via `ProjectForm`, vérifier son apparition dans `ProjectListPage`, puis le supprimer.
+2. [x] **Navigation** : Vérifier que le clic sur un projet mène à `GraphEditorPage`.
+3. [ ] **Test CRUD Sous-Projet** : (À venir) Créer un sous-projet.
+4. [ ] **Test Éditeur de Graphe** : (À venir) Modifier le code Mermaid et sauvegarder.
 
 ---
 
@@ -308,13 +251,12 @@ npm install @monaco-editor/react  # Optionnel, pour éditeur enrichi
 
 ### Ordre Recommandé d'Implémentation (Suite)
 
-1.  **Composants de Gestion de Projet** : `ProjectCard.tsx` et `ProjectForm.tsx`.
-2.  Intégration dans `ProjectListPage.tsx` (Affichage des données récupérées + boutons CRUD).
-3.  Développement de la Phase 2 (Éditeur de Graphe).
+1. **Composants de Gestion de Sous-Projet** : `SubProjectCard.tsx` et `SubProjectForm.tsx` (pour pouvoir créer des éléments à éditer et les afficher sur ProjectListPage).
+2. **Page Éditeur** : `GraphEditorPage.tsx` et ses dépendances (`MermaidViewer`, `MermaidEditor`).
 
 ### Gestion des Erreurs
 Continuer d'utiliser `try/catch` autour des appels API pour mettre à jour l'état `error` dans les pages concernées.
 
 ---
 
-**Prochaine Phase :** Développement des composants d'interaction pour la `ProjectListPage`.
+**Prochaine Phase :** Développement de la gestion des Sous-Projets (`SubProjectCard` et `SubProjectForm`) pour enrichir la `ProjectListPage`.

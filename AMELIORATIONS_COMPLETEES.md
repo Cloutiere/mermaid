@@ -1,21 +1,18 @@
-// AMELIORATIONS_COMPLETEES.md.txt
-// Version 1.1 (Mise à jour post-Routage & Fetch)
+// frontend/AMELIORATIONS_COMPLETEES.md
+// Version 1.2 (Mise à jour post-CRUD Projet UI)
 
 # ✅ Améliorations Complétées - [Date Actuelle]
 
 ## 🎯 Résumé Exécutif
 
-**Le backend est 100% opérationnel, et la couche d'accès aux données du frontend est désormais implémentée !**
+**Le socle CRUD pour la gestion des Projets est entièrement implémenté et validé sur le Frontend !**
 
-Le backend dispose d'une **API RESTful complète et opérationnelle**, avec :
-- Architecture Flask professionnelle (Factory Pattern, Blueprints)
-- Sécurité renforcée (CORS, gestion d'erreurs)
-- CRUD complet pour toutes les ressources (Project, SubProject, Node, Relationship)
-- Services Python robustes pour l'import/export Mermaid
-- Validation des données avec Pydantic v2
-- Code testé et validé par l'architecte
+Le backend est 100% opérationnel. Le Frontend a finalisé la première phase d'interaction UI :
+- Connexion API et routage établis.
+- **CRUD (Create, Read, Delete) pour l'entité `Project` intégré** dans `ProjectListPage.tsx` via les composants `ProjectForm.tsx` et `ProjectCard.tsx`.
+- Les mécanismes de rafraîchissement et de gestion d'état sont robustes.
 
-Le Frontend a franchi deux étapes clés avec la **synchronisation des types API**, la création du **Service Client API dédié**, et l'établissement de la **structure de navigation et de chargement initial des données**. Le développement des composants UI d'interaction constitue la prochaine phase majeure.
+La prochaine étape majeure est la construction de l'éditeur de graphe (`GraphEditorPage`).
 
 ---
 
@@ -55,21 +52,29 @@ Le Frontend a franchi deux étapes clés avec la **synchronisation des types API
 **Fichier impacté** : `frontend/src/pages/ProjectListPage.tsx`
 **Statut** : ✅ TERMINÉ
 
+### 5. Implémentation du CRUD Projet (Phase 1 Terminée)
+**Tâche** : Création et intégration des composants `ProjectForm.tsx` et `ProjectCard.tsx` pour gérer la création et la suppression des projets depuis `ProjectListPage.tsx`.
+**Fichiers impactés** :
+- `frontend/src/components/ProjectForm.tsx` (Créé)
+- `frontend/src/components/ProjectCard.tsx` (Créé)
+- `frontend/src/pages/ProjectListPage.tsx` (Intégration majeure)
+**Statut** : ✅ TERMINÉ
+
 ---
 
 ## ✅ Fonctionnalités Critiques Implémentées (Backend - Rappel)
 
-### 5. Services CRUD SubProject & Relations 📦🔗
+### 6. Services CRUD SubProject & Relations 📦🔗
 
 - **Fichiers créés/modifiés** : `backend/app/services/subprojects.py`, `backend/app/routes/subprojects.py`
 - **Fonctionnalités** : CRUD complet pour `SubProject`, incluant validations et gestion d'erreurs.
 
-### 6. Services CRUD Node & Relationship 🔗
+### 7. Services CRUD Node & Relationship 🔗
 
 - **Fichiers créés/modifiés** : `backend/app/services/nodes.py`, `backend/app/routes/nodes.py`
 - **Fonctionnalités** : CRUD complet pour `Node` et `Relationship`, avec validations croisées (ex: appartenance au même SubProject).
 
-### 7. Services de Transformation Mermaid 🔄
+### 8. Services de Transformation Mermaid 🔄
 
 - **Fichiers créés/modifiés** : `backend/app/services/mermaid_parser.py`, `backend/app/services/mermaid_generator.py`, `backend/app/routes/mermaid.py`
 - **Fonctionnalités** :
@@ -102,7 +107,7 @@ backend/
 │       └── mermaid_generator.py # ✅ Service Export: DB → Mermaid
 ├── migrations/               # ✅ Flask-Migrate
 ├── run.py                    # ✅ Point d'entrée
-└── requirements.txt          # ✅ Dépendances (sans sqlmodel)
+└── requirements.txt          # ✅ Dépendances
 ```
 
 ### API RESTful Complète (Backend)
@@ -135,9 +140,9 @@ backend/
 ### Frontend
 - ✅ Types API (`frontend/src/types/api.ts`) - Synchronisés avec Pydantic
 - ✅ Client API dédié (`frontend/src/services/api.ts`) - Wrapper Axios
-- ✅ **Router et Navigation** - Configuration `react-router-dom` et routage dynamique **TERMINÉ**
+- ✅ **Routage et Navigation** - Configuration `react-router-dom` **TERMINÉ**
 - ✅ **Chargement Initial des Projets** (`ProjectListPage.tsx`) **TERMINÉ**
-- 🔨 **Composants React** (MermaidViewer, NodeEditor, GraphEditor, listes) - *À Développer*
+- ✅ **CRUD Projet UI** (`ProjectForm`, `ProjectCard`) **TERMINÉ**
 
 ---
 
@@ -160,16 +165,16 @@ npm run dev
 # Health check
 curl http://localhost:5001/api/health
 
-# Liste des projets (doit retourner une liste vide ou pleine)
-curl http://localhost:5001/api/projects/
+# Création d'un projet (pour tester la nouvelle UI)
+curl -X POST http://localhost:5001/api/projects/ -H "Content-Type: application/json" -d '{"title": "Test CRUD UI"}'
 ```
 
 ---
 
 ## 🎊 Conclusion
 
-**Le socle technique est complet.** Nous passons maintenant à la construction concrète de l'interface utilisateur (Phase 1.2 du plan), en commençant par la gestion des projets sur la page d'accueil.
+**Le socle technique du Backend est complet et la gestion des Projets est fonctionnelle côté Frontend.** Nous pouvons désormais passer à la construction de l'outil principal : l'éditeur de graphe.
 
 **Prochaines étapes recommandées** :
-1. Développer `ProjectCard.tsx` et `ProjectForm.tsx`.
-2. Intégrer ces composants dans `ProjectListPage.tsx`.
+1. Développer `GraphEditorPage.tsx` pour charger et afficher un `SubProject`.
+2. Intégrer les composants de visualisation (`MermaidViewer.tsx`).

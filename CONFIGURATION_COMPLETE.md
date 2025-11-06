@@ -1,11 +1,11 @@
-// CONFIGURATION_COMPLETE.md.txt
-// Version 1.1 (Mise à jour post-Routage & Fetch)
+// frontend/CONFIGURATION_COMPLETE.md.txt
+// Version 1.2 (Mise à jour post-CRUD Projet UI)
 
 # 🎉 Configuration Complète - Projet Éditeur Visuel Mermaid
 
 ## ✅ Configuration Terminée avec Succès
 
-Votre environnement est **100% opérationnel** pour les développements backend ! Le frontend a également atteint un jalon critique en finalisant le routage et la connexion initiale à l'API.
+Votre environnement est **100% opérationnel** pour les développements backend, et la **Phase 1 (Gestion des Projets)** est achevée côté frontend !
 
 ---
 
@@ -43,7 +43,7 @@ python run.py
 Le backend est accessible sur http://localhost:5001.
 
 ### Frontend (port 5000 - déjà actif via workflow)
-Le frontend tourne automatiquement ! L'initialisation de base est présente, incluant le routage et le chargement initial des projets.
+Le frontend tourne automatiquement. L'initialisation de base est présente, incluant le routage et la gestion des projets.
 ```bash
 cd frontend
 npm run dev
@@ -107,9 +107,16 @@ backend/
 ```
 frontend/
 ├── src/
-│   ├── components/        # [À DÉVELOPPER] Composants React (ProjectCard, Forms, Editor)
+│   ├── components/        # ✅ Composants React
+│   │   ├── ProjectCard.tsx    # ✅ Implémenté (CRUD Projet)
+│   │   ├── ProjectForm.tsx    # ✅ Implémenté (CRUD Projet)
+│   │   ├── SubProjectCard.tsx # [TODO]
+│   │   ├── SubProjectForm.tsx # [TODO]
+│   │   ├── MermaidViewer.tsx  # [TODO]
+│   │   ├── MermaidEditor.tsx  # [TODO]
+│   │   └── ConfirmDialog.tsx  # [TODO]
 │   ├── pages/             # ✅ Pages principales de l'application
-│   │   ├── ProjectListPage.tsx  # ✅ Liste des projets (Fetch API implémenté)
+│   │   ├── ProjectListPage.tsx  # ✅ Liste des projets (CRUD Projet UI fonctionnel)
 │   │   └── GraphEditorPage.tsx  # ✅ Page Éditeur de Graphe (Routage fonctionnel)
 │   ├── types/
 │   │   └── api.ts         # ✅ Types synchronisés avec Pydantic
@@ -133,22 +140,22 @@ frontend/
 ### Backend (✅ TERMINÉ)
 - **Toutes les fonctionnalités API (CRUD + Transformation Mermaid) sont complètes.**
 
-### Frontend (🔨 EN COURS)
-1.  **Phase 1.2 (Gestion des Projets)** : Construire les composants `ProjectCard` et `ProjectForm` pour interagir avec les données chargées dans `ProjectListPage`.
-2.  **Phase 2 (Éditeur)** : Développer `GraphEditorPage` et intégrer `MermaidViewer`.
+### Frontend (🔨 EN COURS - Phase 1 Suite)
+1. **Phase 1.5/1.6** : Construire les composants `SubProjectCard.tsx` et `SubProjectForm.tsx` pour permettre la création et l'affichage des Sous-Projets sur la page principale.
+2. **Phase 2** : Développer `GraphEditorPage.tsx` et ses dépendances.
 
 ---
 
 ## 📚 Documentation de Référence
 
 - **DDA** : `attached_assets/DDA_mermaid_1762371637525.md`
-- **Modèles originaux** : `attached_assets/backendappmodels.py_1762371637524.txt`
+- **Plans de développement** : `PLAN_DEVELOPPEMENT_FRONTEND.md`
 
 ---
 
 ## ✨ Changements Importants (Récapitulatif)
 
 - ✅ **Backend** : Architecture, DB, API RESTful et services de transformation **TERMINÉS**.
-- ✅ **Frontend** : Types API, Service Client API, **Routage** et **Chargement initial** des projets **TERMINÉS**.
+- ✅ **Frontend Phase 1.1-1.4** : Connexion API, Routage, et **CRUD Projet UI** sont **TERMINÉS**.
 
-Le focus est maintenant sur le développement des composants React interactifs pour la gestion des projets (CRUD).
+Le focus est maintenant sur l'implémentation des composants de gestion des **Sous-Projets**.

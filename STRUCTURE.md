@@ -1,5 +1,5 @@
-// STRUCTURE.md.txt
-// Version 1.1 (Mise à jour post-Routage & Fetch)
+// frontend/STRUCTURE.md
+// Version 1.2 (Mise à jour post-CRUD Projet UI)
 
 # Structure du Projet - Éditeur Visuel Mermaid
 
@@ -7,10 +7,10 @@
 
 ```
 /
-├── backend/                    # Backend Python/Flask
+├── backend/                    # Backend Python/Flask (Architecture complète - Voir DDA.md)
 │   ├── app/                    # Modules applicatifs Python
 │   │   ├── models.py          # ✅ Modèles SQLAlchemy (Project, SubProject, Node, Relationship, ClassDef)
-│   │   ├── __init__.py        # ✅ Package marker + Factory Pattern
+│   │   ├── __init__.py        # ✅ Factory Pattern
 │   │   ├── schemas.py         # ✅ Schémas Pydantic pour API
 │   │   ├── routes/            # ✅ Routes API RESTful complètes (CRUD + Mermaid)
 │   │   └── services/          # ✅ Services métier critiques (CRUD + Mermaid Transform)
@@ -20,15 +20,16 @@
 │
 ├── frontend/
 │   ├── src/
-│   │   ├── components/        # [À DÉVELOPPER] Composants React interactifs
-│   │   │   ├── ProjectCard.tsx    # [TODO] Carte pour un projet unique
-│   │   │   ├── ProjectForm.tsx    # [TODO] Formulaire de création/édition de projet
+│   │   ├── components/        # ✅ Composants React interactifs
+│   │   │   ├── ProjectCard.tsx    # ✅ Carte pour un projet unique
+│   │   │   ├── ProjectForm.tsx    # ✅ Formulaire de création de projet
 │   │   │   ├── SubProjectCard.tsx # [TODO] Carte pour un sous-projet
 │   │   │   ├── SubProjectForm.tsx # [TODO] Formulaire de création/édition de sous-projet
 │   │   │   ├── MermaidViewer.tsx  # [TODO] Rendu du graphe Mermaid
+│   │   │   ├── MermaidEditor.tsx  # [TODO] Éditeur de code Mermaid
 │   │   │   └── ConfirmDialog.tsx  # [TODO] Dialogue de confirmation
 │   │   ├── pages/             # ✅ Pages principales de l'application
-│   │   │   ├── ProjectListPage.tsx  # ✅ Liste des projets (Routage et Fetch API implémentés)
+│   │   │   ├── ProjectListPage.tsx  # ✅ Liste des projets (CRUD Projet UI fonctionnel)
 │   │   │   └── GraphEditorPage.tsx  # ✅ Page Éditeur de Graphe (Routage fonctionnel)
 │   │   ├── types/             # ✅ Interfaces TypeScript pour API
 │   │   │   └── api.ts         # ✅ Types synchronisés avec Pydantic
@@ -45,8 +46,6 @@
 │   └── tailwind.config.js     # ✅ Configuration Tailwind
 │
 ├── attached_assets/           # Documents de référence
-│   ├── backendappmodels.py_1762371637524.txt
-│   └── DDA_mermaid_1762371637525.md
 │
 ├── .env.example               # ✅ Template variables d'environnement
 ├── .gitignore                 # ✅ Configuration Git
@@ -63,23 +62,35 @@
 - [x] Client API (Axios Wrapper)
 - [x] **Routage React fonctionnel (`App.tsx`)**
 - [x] **Chargement initial des projets (`ProjectListPage.tsx`)**
+- [x] **Composants CRUD Projet UI** (`ProjectForm`, `ProjectCard`)
 
 ### 🔨 À Développer (Composants UI React)
-Le développement se concentre maintenant sur la couche UI pour interagir avec les données récupérées :
+Le développement se concentre maintenant sur la gestion des Sous-Projets et l'éditeur de graphe :
 
-1.  **Composants de Gestion de Projet** : `ProjectCard.tsx`, `ProjectForm.tsx`.
-2.  **Composants d'Édition** : `MermaidViewer.tsx`, `MermaidEditor.tsx` (pour la Phase 2).
+1.  **Composants de Gestion de Sous-Projets** : `SubProjectCard.tsx`, `SubProjectForm.tsx`.
+2.  **Composants d'Édition de Graphe** : `MermaidViewer.tsx`, `MermaidEditor.tsx`.
+3.  **Composants Utilitaires** : `ConfirmDialog.tsx`.
+4.  **Page d'Édition** : `GraphEditorPage.tsx` (Logique de chargement et de sauvegarde du SubProject).
 
 ## Commandes Utiles
 
 ```bash
 # Démarrer le backend (Port 5001)
-cd backend && python run.py
+cd backend
+python run.py
 
 # Démarrer le frontend (Port 5000)
-cd frontend && npm run dev
+cd frontend
+npm run dev
 ```
 
 ## Prochaines Étapes
 
-Poursuite du développement selon le `PLAN_DEVELOPPEMENT_FRONTEND.md`, en commençant par les composants de la `ProjectListPage`.
+Poursuite du développement selon le plan, en se concentrant sur la gestion des `SubProject` dans `ProjectListPage` puis en attaquant la `GraphEditorPage`.
+
+---
+
+## 📚 Documentation de Référence
+
+- **DDA** : `attached_assets/DDA_mermaid_1762371637525.md` (Stable)
+- **Plans de développement** : `PLAN_DEVELOPPEMENT_FRONTEND.md`
