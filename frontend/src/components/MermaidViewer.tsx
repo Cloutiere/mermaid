@@ -37,20 +37,25 @@ const MermaidViewer: React.FC<MermaidViewerProps> = ({ mermaidCode }) => {
       return
     }
 
+    let isCancelled = false
+
     const renderGraph = async () => {
       try {
         // Generate a unique ID for each render to avoid conflicts
-        const graphId = `mermaid-graph-${Date.now()}`
+        const graphId = `mermaid-graph-${Date.now()}-${Math.random().toString(36).substring(7)}`
 
         // ATTENTION: mermaid.render est ASYNCHRONE et retourne une Promesse.
         // Nous devons utiliser await pour récupérer le code SVG et le bindage.
         const { svg } = await mermaid.render(graphId, mermaidCode)
 
-        if (containerRef.current) {
+        // Only update if this render hasn't been cancelled
+        if (containerRef.current && !isCancelled) {
           containerRef.current.innerHTML = svg
         }
 
       } catch (error) {
+        if (isCancelled) return
+        
         console.error('Erreur de rendu Mermaid:', error)
         let errorMessage = 'Une erreur de syntaxe est survenue dans le code Mermaid.'
 
@@ -66,6 +71,14 @@ const MermaidViewer: React.FC<MermaidViewerProps> = ({ mermaidCode }) => {
     }
 
     renderGraph()
+
+    // Cleanup function to prevent state updates after unmount
+    return () => {
+      isCancelled = true
+      if (containerRef.current) {
+        containerRef.current.innerHTML = ''
+      }
+    }
 
   }, [mermaidCode])
 

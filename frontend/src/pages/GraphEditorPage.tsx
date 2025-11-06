@@ -57,11 +57,11 @@ function GraphEditorPage() {
 
   // --- 3. Logique de Détection de Changement (Dirty State) ---
   const isDirty = useMemo(() => {
-    if (!subproject || loading || isSaving) return false
+    if (!subproject || loading) return false
 
     // Compare le code actuel avec le code chargé original
     return currentMermaidCode !== subproject.mermaid_definition
-  }, [currentMermaidCode, subproject, loading, isSaving])
+  }, [currentMermaidCode, subproject, loading])
 
   // --- 4. Rendu Conditionnel (Chargement et Erreur) ---
 
