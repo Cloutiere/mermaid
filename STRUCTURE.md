@@ -1,3 +1,5 @@
+// STRUCTURE.md.txt
+
 # Structure du Projet - Éditeur Visuel Mermaid
 
 ## Arborescence Complète
@@ -15,9 +17,12 @@
 │   │   │   ├── nodes.py       # ✅ Routes pour Nodes et Relationships
 │   │   │   └── mermaid.py     # ✅ Routes pour Import/Export Mermaid
 │   │   └── services/          # ✅ Services métier critiques
+│   │       ├── projects.py    # ✅ Logique métier Project (manquant dans l'historique mais nécessaire)
+│   │       ├── subprojects.py # ✅ Logique métier SubProject (manquant dans l'historique mais nécessaire)
+│   │       ├── nodes.py       # ✅ Logique métier Node + Relationship (manquant dans l'historique mais nécessaire)
 │   │       ├── mermaid_parser.py    # ✅ Service Import: Mermaid → DB
 │   │       └── mermaid_generator.py # ✅ Service Export: DB → Mermaid
-│   ├── migrations/            # ✅ Migrations Flask-Migrate
+├── migrations/            # ✅ Flask-Migrate
 │   │   └── versions/          # ✅ Scripts de migration générés
 │   ├── run.py                 # ✅ Point d'entrée Flask
 │   ├── requirements.txt       # ✅ Dépendances Python installées
@@ -29,12 +34,15 @@
 │   │   │   ├── MermaidViewer.tsx    # [TODO] Affichage graphe Mermaid
 │   │   │   ├── NodeEditor.tsx       # [TODO] Éditeur de nœuds
 │   │   │   └── GraphEditor.tsx      # [TODO] Éditeur principal
+│   │   ├── pages/             # ✅ Pages principales de l'application
+│   │   │   ├── ProjectListPage.tsx  # ✅ Page Liste des Projets
+│   │   │   └── GraphEditorPage.tsx  # ✅ Page Éditeur de Graphe
 │   │   ├── types/             # ✅ Interfaces TypeScript pour API
 │   │   │   └── api.ts         # ✅ Types synchronisés avec Pydantic
-│   │   ├── services/          # [À DÉVELOPPER] Services frontend
-│   │   │   └── api.ts         # [TODO] Client API (axios)
-│   │   ├── App.tsx            # ✅ Composant racine (minimal)
-│   │   ├── main.tsx           # ✅ Point d'entrée React
+│   │   ├── services/          # ✅ Services frontend
+│   │   │   └── api.ts         # ✅ Client API (axios)
+│   │   ├── App.tsx            # ✅ Composant racine (configuration du routage)
+│   │   ├── main.tsx           # ✅ Point d'entrée React (avec BrowserRouter)
 │   │   ├── index.css          # ✅ Styles Tailwind
 │   │   └── vite-env.d.ts      # ✅ Types Vite
 │   ├── index.html             # ✅ Template HTML
@@ -72,24 +80,20 @@
 - [x] **Services de transformation Mermaid opérationnels**
 - [x] **Schémas Pydantic backend** implémentés
 - [x] **Types TypeScript frontend** pour les API (`frontend/src/types/api.ts`)
+- [x] **Client API dédié** (`frontend/src/services/api.ts`)
+- [x] **Router et Navigation** (Structure des pages et `react-router-dom`)
 
 ### 🔨 À Développer
 
 #### Backend (Python/Flask)
-Tous les points critiques sont achevés. Les efforts se concentrent maintenant sur le frontend.
+Tous les points critiques sont achevés.
 
 #### Frontend (React/TypeScript)
-1.  **Client API dédié** (`frontend/src/services/api.ts`)
-    *   Wrapper Axios pour centraliser les appels backend.
-    *   Gestion des erreurs et réponses typées.
-2.  **Composants React**
+1.  **Composants React**
     *   `MermaidViewer.tsx` : Rendu graphe avec Mermaid.js.
     *   `NodeEditor.tsx` : Formulaire d'édition de nœud.
     *   `GraphEditor.tsx` : Interface principale d'édition.
-    *   `ProjectList.tsx` : Liste des projets/sous-projets.
-3.  **Router et Navigation**
-    *   Configuration React Router pour la navigation entre les vues.
-    *   Gestion de l'état global pour la synchronisation UI ↔ Backend.
+    *   Implémentation de la logique de synchronisation UI ↔ Backend via `api.ts`.
 
 ## Commandes Utiles
 
@@ -113,17 +117,12 @@ echo $DATABASE_URL
 
 ## Prochaines Étapes
 
-1. Implémenter les modèles SQLModel dans `backend/app/models.py`
-2. Créer la configuration DB et les migrations
-3. Développer les services de transformation Mermaid
-4. Créer les routes API
-5. Implémenter les composants React avec Mermaid.js
-6. Synchroniser les types TypeScript avec Pydantic
+1. Développer l'interface utilisateur pour la liste des projets.
+2. Développer l'éditeur de graphe (`GraphEditorPage`) et intégrer Mermaid.js.
 
 ## Références Techniques
 
 - **Modèle de données complet** : `attached_assets/backendappmodels.py_1762371637524.txt`
 - **Architecture détaillée** : `attached_assets/DDA_mermaid_1762371637525.md`
-- SQLModel: https://sqlmodel.tiangolo.com/
 - Pydantic: https://docs.pydantic.dev/
 - Mermaid.js: https://mermaid.js.org/
