@@ -49,8 +49,12 @@ const MermaidViewer: React.FC<MermaidViewerProps> = ({ mermaidCode }) => {
         const { svg } = await mermaid.render(graphId, mermaidCode)
 
         // Only update if this render hasn't been cancelled
-        if (containerRef.current && !isCancelled) {
-          containerRef.current.innerHTML = svg
+        if (!isCancelled) {
+          if (containerRef.current) {
+            containerRef.current.innerHTML = svg
+          }
+          // Clear any previous error on successful render
+          setRenderError(null)
         }
 
       } catch (error) {
