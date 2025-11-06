@@ -4,18 +4,19 @@
 
 ```
 /
-├── backend/
+├── backend/                    # Backend Python/Flask
 │   ├── app/                    # Modules applicatifs Python
 │   │   ├── models.py          # ✅ Modèles SQLAlchemy (Project, SubProject, Node, Relationship, ClassDef)
-│   │   ├── __init__.py        # ✅ Package marker
-│   │   ├── schemas.py         # [TODO] Schémas Pydantic pour API
-│   │   ├── routes/            # [TODO] Endpoints API RESTful
-│   │   │   ├── projects.py    # Routes pour Projects
-│   │   │   ├── subprojects.py # Routes pour SubProjects
-│   │   │   └── nodes.py       # Routes pour Nodes
-│   │   └── services/          # [TODO] Services métier critiques
-│   │       ├── mermaid_parser.py    # Service Import: Mermaid → DB
-│   │       └── mermaid_generator.py # Service Export: DB → Mermaid
+│   │   ├── __init__.py        # ✅ Package marker + Factory Pattern
+│   │   ├── schemas.py         # ✅ Schémas Pydantic pour API
+│   │   ├── routes/            # ✅ Routes API RESTful complètes
+│   │   │   ├── projects.py    # ✅ Routes pour Projects
+│   │   │   ├── subprojects.py # ✅ Routes pour SubProjects
+│   │   │   ├── nodes.py       # ✅ Routes pour Nodes et Relationships
+│   │   │   └── mermaid.py     # ✅ Routes pour Import/Export Mermaid
+│   │   └── services/          # ✅ Services métier critiques
+│   │       ├── mermaid_parser.py    # ✅ Service Import: Mermaid → DB
+│   │       └── mermaid_generator.py # ✅ Service Export: DB → Mermaid
 │   ├── migrations/            # ✅ Migrations Flask-Migrate
 │   │   └── versions/          # ✅ Scripts de migration générés
 │   ├── run.py                 # ✅ Point d'entrée Flask
@@ -28,8 +29,8 @@
 │   │   │   ├── MermaidViewer.tsx    # [TODO] Affichage graphe Mermaid
 │   │   │   ├── NodeEditor.tsx       # [TODO] Éditeur de nœuds
 │   │   │   └── GraphEditor.tsx      # [TODO] Éditeur principal
-│   │   ├── types/             # [À DÉVELOPPER] Interfaces TypeScript
-│   │   │   └── api.ts         # [TODO] Types synchronisés avec Pydantic
+│   │   ├── types/             # ✅ Interfaces TypeScript pour API
+│   │   │   └── api.ts         # ✅ Types synchronisés avec Pydantic
 │   │   ├── services/          # [À DÉVELOPPER] Services frontend
 │   │   │   └── api.ts         # [TODO] Client API (axios)
 │   │   ├── App.tsx            # ✅ Composant racine (minimal)
@@ -40,7 +41,7 @@
 │   ├── package.json           # ✅ Dépendances Node.js installées
 │   ├── tsconfig.json          # ✅ Configuration TypeScript
 │   ├── tsconfig.node.json     # ✅ Config TypeScript pour Vite
-│   ├── vite.config.ts         # ✅ Configuration Vite
+│   ├── vite.config.ts         # ✅ Configuration Vite (proxy API)
 │   ├── tailwind.config.js     # ✅ Configuration Tailwind
 │   └── postcss.config.js      # ✅ Configuration PostCSS
 │
@@ -52,63 +53,43 @@
 ├── .gitignore                 # ✅ Configuration Git
 ├── README.md                  # ✅ Documentation principale
 └── STRUCTURE.md               # ✅ Ce fichier
-
 ```
 
 ## Statut de Configuration
 
 ### ✅ Complété
-- [x] Installation Python 3.11
-- [x] Installation Node.js 20
-- [x] Base de données PostgreSQL créée et configurée
-- [x] Dépendances Python installées
-- [x] Dépendances Node.js installées
+- [x] Python 3.11 et Node.js 20 installés
+- [x] PostgreSQL créé avec variables d'environnement
+- [x] **Backend : Toutes les dépendances Python installées**
+- [x] **Frontend : Toutes les dépendances Node.js installées**
+- [x] Arborescence du projet créée
 - [x] Fichiers de configuration créés
-- [x] Arborescence de base créée
-- [x] Points d'entrée minimaux (run.py, main.tsx)
-- [x] **Modèles SQLAlchemy créés** (Project, SubProject, Node, Relationship, ClassDef)
+- [x] Points d'entrée créés (run.py, main.tsx)
+- [x] **Modèles SQLAlchemy créés** (backend/app/models.py)
 - [x] **Flask-Migrate initialisé et migration initiale appliquée**
-- [x] **Toutes les tables créées dans PostgreSQL**
+- [x] **Toutes les tables créées** (project, subproject, node, relationship, classdef)
+- [x] **API RESTful Backend Complète** (CRUD pour toutes les ressources)
+- [x] **Services de transformation Mermaid opérationnels**
+- [x] **Schémas Pydantic backend** implémentés
+- [x] **Types TypeScript frontend** pour les API (`frontend/src/types/api.ts`)
 
 ### 🔨 À Développer
 
 #### Backend (Python/Flask)
-1. ~~**Modèles de données**~~ ✅ **TERMINÉ** (`backend/app/models.py`)
-   - ✅ Tous les modèles SQLAlchemy créés (Project, SubProject, Node, Relationship, ClassDef)
-   - ✅ Tables créées dans PostgreSQL avec Flask-Migrate
-
-2. **Schémas Pydantic** (`backend/app/schemas.py`)
-   - Schémas de validation pour chaque modèle
-   - DTOs pour les requêtes/réponses API
-
-4. **Routes API** (`backend/app/routes/`)
-   - CRUD pour Projects
-   - CRUD pour SubProjects
-   - CRUD pour Nodes et Relationships
-   - Endpoints pour Import/Export Mermaid
-
-5. **Services critiques** (`backend/app/services/`)
-   - **Parser Mermaid** : Analyse du code Mermaid → Création entités DB
-   - **Générateur Mermaid** : Lecture DB → Génération code Mermaid
+Tous les points critiques sont achevés. Les efforts se concentrent maintenant sur le frontend.
 
 #### Frontend (React/TypeScript)
-1. **Types TypeScript** (`frontend/src/types/api.ts`)
-   - Interfaces synchronisées avec schémas Pydantic
-   - Types pour Project, SubProject, Node, Relationship
-
-2. **Client API** (`frontend/src/services/api.ts`)
-   - Wrapper Axios pour appels backend
-   - Gestion des erreurs
-
-3. **Composants React**
-   - `MermaidViewer.tsx` : Rendu graphe avec Mermaid.js
-   - `NodeEditor.tsx` : Formulaire édition nœud
-   - `GraphEditor.tsx` : Interface principale
-   - `ProjectList.tsx` : Liste des projets/sous-projets
-
-4. **Router et Navigation**
-   - Configuration React Router
-   - Navigation entre projets/sous-projets
+1.  **Client API dédié** (`frontend/src/services/api.ts`)
+    *   Wrapper Axios pour centraliser les appels backend.
+    *   Gestion des erreurs et réponses typées.
+2.  **Composants React**
+    *   `MermaidViewer.tsx` : Rendu graphe avec Mermaid.js.
+    *   `NodeEditor.tsx` : Formulaire d'édition de nœud.
+    *   `GraphEditor.tsx` : Interface principale d'édition.
+    *   `ProjectList.tsx` : Liste des projets/sous-projets.
+3.  **Router et Navigation**
+    *   Configuration React Router pour la navigation entre les vues.
+    *   Gestion de l'état global pour la synchronisation UI ↔ Backend.
 
 ## Commandes Utiles
 
