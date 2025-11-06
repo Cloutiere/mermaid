@@ -12,6 +12,7 @@ interface MermaidViewerProps {
 const MermaidViewer: React.FC<MermaidViewerProps> = ({ mermaidCode }) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const [renderError, setRenderError] = useState<string | null>(null)
+  const renderVersionRef = useRef(0)
 
   // Initialize Mermaid.js once on component mount
   useEffect(() => {
@@ -28,6 +29,10 @@ const MermaidViewer: React.FC<MermaidViewerProps> = ({ mermaidCode }) => {
       return
     }
 
+    // Increment render version to invalidate previous renders
+    renderVersionRef.current += 1
+    const currentRenderVersion = renderVersionRef.current
+
     // Clear previous content and error
     containerRef.current.innerHTML = ''
     setRenderError(null)
@@ -36,8 +41,6 @@ const MermaidViewer: React.FC<MermaidViewerProps> = ({ mermaidCode }) => {
       containerRef.current.innerHTML = '<p class="text-gray-400 text-center p-8">Le graphe apparaîtra ici.</p>'
       return
     }
-
-    let isCancelled = false
 
     const renderGraph = async () => {
       try {
@@ -48,8 +51,8 @@ const MermaidViewer: React.FC<MermaidViewerProps> = ({ mermaidCode }) => {
         // Nous devons utiliser await pour récupérer le code SVG et le bindage.
         const { svg } = await mermaid.render(graphId, mermaidCode)
 
-        // Only update if this render hasn't been cancelled
-        if (!isCancelled) {
+        // Only update if this render is still current
+        if (renderVersionRef.current === currentRenderVersion) {
           if (containerRef.current) {
             containerRef.current.innerHTML = svg
           }
@@ -58,7 +61,8 @@ const MermaidViewer: React.FC<MermaidViewerProps> = ({ mermaidCode }) => {
         }
 
       } catch (error) {
-        if (isCancelled) return
+        // Only show error if this render is still current
+        if (renderVersionRef.current !== currentRenderVersion) return
         
         console.error('Erreur de rendu Mermaid:', error)
         let errorMessage = 'Une erreur de syntaxe est survenue dans le code Mermaid.'
@@ -76,9 +80,8 @@ const MermaidViewer: React.FC<MermaidViewerProps> = ({ mermaidCode }) => {
 
     renderGraph()
 
-    // Cleanup function to prevent state updates after unmount
+    // Cleanup function
     return () => {
-      isCancelled = true
       if (containerRef.current) {
         containerRef.current.innerHTML = ''
       }
