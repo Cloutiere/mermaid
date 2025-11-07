@@ -1,0 +1,234 @@
+oici la refactorisation complète de ton backend et frontend selon l’Option B (refactorisation complète) que tu avais proposée.
+
+🧩 BACKEND
+1️⃣ backend/app/schemas.py
+
+Ajoute un schéma dédié pour les métadonnées :
+
+class SubProjectMetadataUpdate(BaseModel):
+    """Schéma pour la mise à jour partielle (title + visual_layout)."""
+    title: str
+    visual_layout: Optional[Dict[str, Any]] = None
+
+2️⃣ backend/app/services/subprojects.py
+
+Refactorisation du service complet :
+
+# backend/app/services/subprojects.py
+from typing import List, Optional
+from sqlalchemy.orm import selectinload
+from werkzeug.exceptions import NotFound, BadRequest
+
+from app import db
+from app.models import SubProject, Project
+from app.schemas import SubProjectCreate, SubProjectMetadataUpdate
+from app.services.mermaid_parser import synchronize_subproject_entities
+
+
+def _get_project_or_404(project_id: int) -> Project:
+    project = db.session.get(Project, project_id)
+    if not project:
+        raise NotFound(f"Project with ID {project_id} not found.")
+    return project
+
+
+def get_all_subprojects(project_id: Optional[int] = None) -> List[SubProject]:
+    query = db.select(SubProject).options(
+        selectinload(SubProject.nodes),
+        selectinload(SubProject.relationships),
+        selectinload(SubProject.class_defs)
+    ).order_by(SubProject.id)
+
+    if project_id:
+        query = query.filter_by(project_id=project_id)
+
+    return list(db.session.execute(query).scalars().all())
+
+
+def get_subproject_by_id(subproject_id: int) -> SubProject:
+    subproject = db.session.execute(
+        db.select(SubProject).options(
+            selectinload(SubProject.nodes),
+            selectinload(SubProject.relationships),
+            selectinload(SubProject.class_defs)
+        ).filter_by(id=subproject_id)
+    ).scalar_one_or_none()
+
+    if subproject is None:
+        raise NotFound(f"SubProject with ID {subproject_id} not found.")
+    return subproject
+
+
+def create_subproject(subproject_data: SubProjectCreate) -> SubProject:
+    _get_project_or_404(subproject_data.project_id)
+
+    existing = db.session.execute(
+        db.select(SubProject).filter_by(
+            project_id=subproject_data.project_id,
+            title=subproject_data.title
+        )
+    ).scalar_one_or_none()
+    if existing:
+        raise BadRequest(f"A subproject with title '{subproject_data.title}' already exists in this project.")
+
+    subproject = SubProject(
+        project_id=subproject_data.project_id,
+        title=subproject_data.title,
+        mermaid_definition=subproject_data.mermaid_definition,
+        visual_layout=subproject_data.visual_layout
+    )
+    db.session.add(subproject)
+    db.session.flush()
+
+    synchronize_subproject_entities(subproject, subproject.mermaid_definition)
+    db.session.commit()
+    db.session.refresh(subproject)
+    return get_subproject_by_id(subproject.id)
+
+
+def update_subproject_structure(subproject_id: int, data: SubProjectCreate) -> SubProject:
+    """Met à jour UNIQUEMENT la structure (Mermaid + entités)."""
+    subproject = get_subproject_by_id(subproject_id)
+    subproject.title = data.title
+    subproject.mermaid_definition = data.mermaid_definition
+    subproject.visual_layout = data.visual_layout
+
+    try:
+        synchronize_subproject_entities(subproject, subproject.mermaid_definition)
+    except Exception as e:
+        db.session.rollback()
+        raise BadRequest(f"Failed to synchronize Mermaid structure: {e}")
+
+    db.session.commit()
+    return get_subproject_by_id(subproject_id)
+
+
+def update_subproject_metadata(subproject_id: int, data: SubProjectMetadataUpdate) -> SubProject:
+    """Met à jour UNIQUEMENT les métadonnées (title + layout)."""
+    subproject = get_subproject_by_id(subproject_id)
+    subproject.title = data.title
+    subproject.visual_layout = data.visual_layout
+    db.session.commit()
+    return get_subproject_by_id(subproject_id)
+
+
+def delete_subproject(subproject_id: int) -> None:
+    subproject = get_subproject_by_id(subproject_id)
+    db.session.delete(subproject)
+    db.session.commit()
+
+3️⃣ backend/app/routes/subprojects.py
+
+Ajout du nouvel endpoint PATCH /metadata et mise à jour du PUT pour détecter le changement Mermaid :
+
+# backend/app/routes/subprojects.py
+from flask import Blueprint, jsonify, request
+from http import HTTPStatus
+from app.services.subprojects import (
+    get_all_subprojects, get_subproject_by_id,
+    create_subproject, update_subproject_structure,
+    update_subproject_metadata, delete_subproject
+)
+from app.schemas import SubProjectCreate, SubProjectMetadataUpdate, SubProjectRead
+
+subprojects_bp = Blueprint('subprojects', __name__)
+
+@subprojects_bp.route('/', methods=['GET'])
+def list_subprojects():
+    project_id = request.args.get('project_id', type=int)
+    subs = get_all_subprojects(project_id)
+    return jsonify([SubProjectRead.model_validate(sp).model_dump() for sp in subs]), HTTPStatus.OK
+
+
+@subprojects_bp.route('/', methods=['POST'])
+def add_subproject():
+    data = request.get_json()
+    schema = SubProjectCreate.model_validate(data)
+    new_sp = create_subproject(schema)
+    return jsonify(SubProjectRead.model_validate(new_sp).model_dump()), HTTPStatus.CREATED
+
+
+@subprojects_bp.route('/<int:subproject_id>', methods=['PUT'])
+def update_subproject_route(subproject_id: int):
+    data = request.get_json()
+    schema = SubProjectCreate.model_validate(data)
+
+    # Charger l’existant pour comparer les définitions
+    existing = get_subproject_by_id(subproject_id)
+    if existing.mermaid_definition.strip() != schema.mermaid_definition.strip():
+        updated = update_subproject_structure(subproject_id, schema)
+    else:
+        meta = SubProjectMetadataUpdate(title=schema.title, visual_layout=schema.visual_layout)
+        updated = update_subproject_metadata(subproject_id, meta)
+
+    return jsonify(SubProjectRead.model_validate(updated).model_dump()), HTTPStatus.OK
+
+
+@subprojects_bp.route('/<int:subproject_id>/metadata', methods=['PATCH'])
+def patch_subproject_metadata(subproject_id: int):
+    data = request.get_json()
+    schema = SubProjectMetadataUpdate.model_validate(data)
+    updated = update_subproject_metadata(subproject_id, schema)
+    return jsonify(SubProjectRead.model_validate(updated).model_dump()), HTTPStatus.OK
+
+
+@subprojects_bp.route('/<int:subproject_id>', methods=['DELETE'])
+def delete_subproject_route(subproject_id: int):
+    delete_subproject(subproject_id)
+    return '', HTTPStatus.NO_CONTENT
+
+💻 FRONTEND
+4️⃣ frontend/src/services/api.ts
+
+Ajoute les deux nouvelles méthodes :
+
+/** Met à jour uniquement les métadonnées d’un subproject */
+public async patchSubProjectMetadata(id: number, data: { title: string; visual_layout?: any }): Promise<SubProjectRead> {
+  return this.patch<SubProjectRead, typeof data>(`/subprojects/${id}/metadata`, data)
+}
+
+/** Met à jour complètement la structure Mermaid (reconstruction des entités) */
+public async updateSubProjectStructure(id: number, data: SubProjectCreate): Promise<SubProjectRead> {
+  return this.put<SubProjectRead, typeof data>(`/subprojects/${id}`, data)
+}
+
+5️⃣ frontend/src/pages/GraphEditorPage.tsx
+
+Modification de handleSave() :
+
+const handleSave = async () => {
+  if (!subproject || !subprojectIdNumber) return
+  setIsSaving(true)
+  try {
+    const mermaidChanged =
+      normalize(currentMermaidCode) !== normalize(subproject.mermaid_definition)
+
+    if (mermaidChanged) {
+      await apiService.updateSubProjectStructure(subprojectIdNumber, {
+        project_id: subproject.project_id,
+        title: subproject.title,
+        mermaid_definition: currentMermaidCode,
+        visual_layout: subproject.visual_layout,
+      })
+    } else {
+      await apiService.patchSubProjectMetadata(subprojectIdNumber, {
+        title: subproject.title,
+        visual_layout: subproject.visual_layout,
+      })
+    }
+
+    const refreshed = await refetchSubProject(true)
+    setSubProject(refreshed)
+  } catch (err) {
+    console.error('Erreur lors de la sauvegarde :', err)
+  } finally {
+    setIsSaving(false)
+  }
+}
+
+✅ Résumé des bénéfices
+Aspect	Ancien comportement	Nouveau comportement
+Sauvegarde après import JSON	Effaçait tout le graphe	Ne touche plus aux nœuds
+Architecture	Couplage complet entre structure et contenu	Séparation nette entre structure et métadonnées
+Tests	Facile de tester les deux flux séparément	Oui
+Risque de pertes de texte	Éliminé	✅
