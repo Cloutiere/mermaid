@@ -256,3 +256,192 @@ Le Blueprint a été enregistré dans `backend/app/__init__.py` sous le chemin `
 #### **3. Conclusion et Impact**
 
 Ce commit améliore significativement la qualité de vie de l'utilisateur final en rendant l'interface plus flexible et plus puissante. Sur le plan architectural, il complète la connectivité du frontend avec l'API V2.0, débloquant le développement des prochaines fonctionnalités prévues au backlog, notamment l'éditeur de styles visuels et l'interface d'importation de données JSON.
+
+📋 Mémo Technique : Refactorisation Import/Sauvegarde de Contenu Narratif
+🎯 Contexte et Problème Initial
+Symptôme observé
+Lors de l'import de contenu JSON puis d'une sauvegarde, les nœuds du graphe étaient systématiquement détruits et recréés, entraînant :
+
+Changement des IDs primaires des nœuds
+Perte complète des text_content importés
+Cause racine identifiée
+Flux problématique :
+
+Utilisateur importe du JSON → text_content mis à jour dans les nœuds existants ✅
+Utilisateur sauvegarde (même sans changer le graphe) → PUT /api/subprojects/<id> appelé
+Route PUT appelle systématiquement synchronize_subproject_entities()
+Cette fonction supprime TOUS les nœuds existants puis les recrée depuis le code Mermaid
+Résultat : Nouveaux nœuds vierges avec nouveaux IDs, text_content perdus ❌
+🔧 Solution Architecturale : Séparation Structure/Métadonnées
+Principe fondamental
+Distinguer deux types de mises à jour sur un SubProject :
+
+Type	Déclencheur	Comportement
+Structurelle	Code Mermaid modifié (nœuds/relations changés)	Reconstruction complète via synchronize_subproject_entities()
+Métadonnées	Seulement title ou visual_layout changés	Mise à jour simple sans toucher aux nœuds
+Implémentation Backend
+1. Nouveau schéma Pydantic (backend/app/schemas.py)
+class SubProjectMetadataUpdate(BaseModel):
+    """Schéma pour mise à jour métadonnées uniquement (sans structure)."""
+    title: str
+    visual_layout: Optional[Dict[str, Any]] = None
+
+2. Services refactorisés (backend/app/services/subprojects.py)
+Service #1 : Mise à jour structurelle
+
+def update_subproject_structure(subproject_id: int, data: SubProjectCreate) -> SubProject:
+    """Met à jour la structure Mermaid complète (recrée nœuds/relations)."""
+    # Validation unicité titre
+    # Mise à jour title, mermaid_definition, visual_layout
+    # ⚠️ Appelle synchronize_subproject_entities() → reconstruction
+
+Service #2 : Mise à jour métadonnées
+
+def update_subproject_metadata(subproject_id: int, data: SubProjectMetadataUpdate) -> SubProject:
+    """Met à jour UNIQUEMENT title + visual_layout (préserve les nœuds)."""
+    # Validation unicité titre
+    # Mise à jour title, visual_layout
+    # ✅ N'appelle PAS synchronize_subproject_entities() → préservation
+
+3. Routes API enrichies (backend/app/routes/subprojects.py)
+Endpoint existant modifié : PUT /api/subprojects/<id>
+
+# Détecte si le code Mermaid a changé
+if existing.mermaid_definition != validated_data.mermaid_definition:
+    # Changement structurel → reconstruction
+    return update_subproject_structure(subproject_id, validated_data)
+else:
+    # Changement métadonnées seulement → préservation
+    metadata = SubProjectMetadataUpdate(
+        title=validated_data.title,
+        visual_layout=validated_data.visual_layout
+    )
+    return update_subproject_metadata(subproject_id, metadata)
+
+Nouveau endpoint : PATCH /api/subprojects/<id>/metadata
+
+# Force la mise à jour métadonnées uniquement
+return update_subproject_metadata(subproject_id, validated_metadata)
+
+Implémentation Frontend
+1. Méthode HTTP PATCH générique (frontend/src/services/api.ts)
+async patch<T>(endpoint: string, data: any): Promise<T> {
+  const response = await this.client.patch<T>(endpoint, data);
+  return response.data;
+}
+
+2. Nouvelles méthodes API
+// Mise à jour structurelle (via PUT)
+updateSubProjectStructure(id: number, data: SubProjectUpdate): Promise<SubProject>
+// Mise à jour métadonnées (via PATCH)
+patchSubProjectMetadata(id: number, data: SubProjectMetadataUpdate): Promise<SubProject>
+
+3. Intelligence de détection (frontend/src/pages/GraphEditorPage.tsx)
+Fonction de normalisation Mermaid :
+
+const normalizeMermaidCode = (code: string): string => {
+  return code
+    .replace(/\s+/g, ' ')      // Normaliser espaces
+    .replace(/\n/g, ' ')        // Supprimer retours ligne
+    .trim();
+};
+
+Logique de sauvegarde intelligente :
+
+const handleSave = async () => {
+  const normalized1 = normalizeMermaidCode(subproject.mermaid_definition);
+  const normalized2 = normalizeMermaidCode(mermaidCode);
+
+  if (normalized1 === normalized2) {
+    // Pas de changement structurel → PATCH métadonnées
+    await api.patchSubProjectMetadata(id, { title, visual_layout });
+  } else {
+    // Changement structurel → PUT complet
+    await api.updateSubProjectStructure(id, { title, mermaid_definition, visual_layout });
+  }
+};
+
+🐛 Correction Additionnelle : Support Multi-Format Import
+Problème découvert
+L'import JSON échouait silencieusement car :
+
+Le JSON utilisateur utilisait des IDs numériques : {"1136": "texte...", "1137": "texte..."}
+Le code cherchait par mermaid_id : Node.mermaid_id IN ("1136", "1137")
+Résultat : updated_count = 0, mais HTTP 200 OK retourné quand même
+Solution : Support dual (backend/app/services/nodes.py)
+def import_node_content(subproject_id: int, content_map: Dict[str, str]):
+    # Séparer les clés numériques vs alphanumériques
+    numeric_ids = []
+    mermaid_ids = []
+
+    for key in content_map.keys():
+        try:
+            numeric_ids.append(int(key))  # "1136" → 1136
+        except ValueError:
+            mermaid_ids.append(key)       # "A001" → "A001"
+
+    # Construire requête avec OR
+    conditions = []
+    if numeric_ids:
+        conditions.append(Node.id.in_(numeric_ids))
+    if mermaid_ids:
+        conditions.append(Node.mermaid_id.in_(mermaid_ids))
+
+    # Chercher par ID OU mermaid_id
+    query = db.select(Node).where(
+        Node.subproject_id == subproject_id,
+        db.or_(*conditions)
+    )
+
+    # Mapper le contenu sur le bon nœud
+    for node in nodes_to_update:
+        if str(node.id) in content_map:
+            node.text_content = content_map[str(node.id)]
+        elif node.mermaid_id in content_map:
+            node.text_content = content_map[node.mermaid_id]
+
+✅ Validation et Sécurité
+Validation d'unicité des titres
+Ajoutée dans les deux fonctions de mise à jour pour éviter les régressions :
+
+if subproject.title != data.title:
+    existing = db.session.execute(
+        db.select(SubProject).filter(
+            SubProject.id != subproject_id,
+            SubProject.project_id == subproject.project_id,
+            SubProject.title == data.title
+        )
+    ).scalar_one_or_none()
+
+    if existing:
+        raise BadRequest(f"Title '{data.title}' already exists")
+
+Révision architecte
+✅ Séparation structure/métadonnées validée
+✅ Pas de régression dans les autres fonctionnalités
+✅ Validation d'unicité préservée
+✅ Gestion transactionnelle correcte
+📊 Impact et Bénéfices
+Avant	Après
+Sauvegarde → destruction systématique des nœuds	Sauvegarde → préservation si métadonnées seulement
+IDs instables après chaque save	IDs stables
+text_content perdus après import	text_content persistés
+Import JSON avec mermaid_id uniquement	Import JSON avec IDs numériques OU mermaid_id
+🎯 Workflow Utilisateur Final
+Créer un graphe → Nœuds créés avec IDs (ex: 1136, 1137)
+Importer du contenu JSON → Format flexible : {"1136": "texte..."} OU {"A001": "texte..."}
+Modifier titre/layout → Sauvegarde via PATCH → Nœuds préservés ✅
+Modifier structure Mermaid → Sauvegarde via PUT → Nœuds recréés (attendu)
+📁 Fichiers Modifiés
+backend/
+├── app/schemas.py                    # +SubProjectMetadataUpdate
+├── app/services/subprojects.py       # +2 fonctions, +validation unicité
+├── app/services/nodes.py             # Refactor import_node_content
+└── app/routes/subprojects.py         # +PATCH endpoint, logique PUT
+frontend/
+├── src/services/api.ts               # +patch(), +2 méthodes
+└── src/pages/GraphEditorPage.tsx     # +normalizeMermaidCode(), logique save
+
+Date : 7 novembre 2025
+Révision architecte : Validée ✅
+Statut : Production-ready 🚀
