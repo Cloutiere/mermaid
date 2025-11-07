@@ -97,29 +97,68 @@ def import_node_content(subproject_id: int, content_map: Dict[str, str]) -> Dict
     """
     Importe en masse le contenu textuel pour les nœuds d'un subproject.
     Cette opération est transactionnelle et met à jour la définition Mermaid.
+    
+    Accepte les clés du content_map soit comme IDs numériques (ex: "1136") 
+    soit comme mermaid_id (ex: "A001").
     """
     try:
         subproject = db.session.get(SubProject, subproject_id)
         if subproject is None:
             raise NotFound(f"SubProject with ID {subproject_id} not found.")
 
-        # Récupérer tous les nœuds concernés en une seule requête
+        # Séparer les clés en IDs numériques vs mermaid_id
+        numeric_ids = []
+        mermaid_ids = []
+        
+        for key in content_map.keys():
+            try:
+                numeric_ids.append(int(key))
+            except ValueError:
+                mermaid_ids.append(key)
+        
+        # Construire la requête pour chercher par ID OU mermaid_id
+        conditions = []
+        if numeric_ids:
+            conditions.append(Node.id.in_(numeric_ids))
+        if mermaid_ids:
+            conditions.append(Node.mermaid_id.in_(mermaid_ids))
+        
+        if not conditions:
+            # Aucune clé valide fournie
+            return {
+                'updated_count': 0,
+                'ignored_ids': list(content_map.keys())
+            }
+        
         nodes_to_update_query = db.select(Node).where(
             Node.subproject_id == subproject_id,
-            Node.mermaid_id.in_(content_map.keys())
+            db.or_(*conditions)
         )
         nodes_to_update = list(db.session.execute(nodes_to_update_query).scalars().all())
 
-        updated_ids = {node.mermaid_id for node in nodes_to_update}
-        ignored_ids = list(set(content_map.keys()) - updated_ids)
-
+        # Créer un mapping pour retrouver le contenu par ID ou mermaid_id
+        updated_keys = set()
         updated_count = 0
 
         # Mettre à jour les nœuds trouvés
-        if nodes_to_update:
-            for node in nodes_to_update:
-                node.text_content = content_map[node.mermaid_id]
-            updated_count = len(nodes_to_update)
+        for node in nodes_to_update:
+            # Chercher le contenu soit par ID numérique soit par mermaid_id
+            content = None
+            matched_key = None
+            
+            if str(node.id) in content_map:
+                content = content_map[str(node.id)]
+                matched_key = str(node.id)
+            elif node.mermaid_id in content_map:
+                content = content_map[node.mermaid_id]
+                matched_key = node.mermaid_id
+            
+            if content is not None:
+                node.text_content = content
+                updated_keys.add(matched_key)
+                updated_count += 1
+
+        ignored_ids = list(set(content_map.keys()) - updated_keys)
 
         # Mettre à jour la définition Mermaid du SubProject
         # `flush` s'assure que les modifications sont envoyées à la BD avant la génération
