@@ -554,3 +554,43 @@ Ces changements sont majoritairement frontend mais nécessitent une architecture
 L'architecture V2.0 est désormais robuste sur le plan de la persistance des structures de graphe, garantissant que les artefacts dérivés (définition Mermaid) sont toujours synchronisés avec la vérité du modèle relationnel. Les prochaines étapes se concentreront sur l'implémentation des CRUD pour les styles et la mise à jour des mécanismes de parsing pour l'importation des styles depuis Mermaid, comme planifié dans le DDA.
 
 **Prochaine Action Recommandée :** Procéder à la mise en œuvre des services CRUD pour `ClassDef` et la correction du `mermaid_parser.py` pour l'extraction des styles.
+
+### Mémorandum Technique : Implémentation de l'Application de Style sur les Nœuds
+
+**Statut du Commit Logique :** Fini
+**Objectif Atteint :** Implémentation de la fonctionnalité d'application et de retrait de style (`ClassDef`) sur un nœud via une API RESTful (Partie de FNS 2).
+
+#### 1. Objectif du Commit Logique
+
+Ce commit logique finalise une partie essentielle de la spécification FNS 2 en fournissant le mécanisme backend nécessaire pour qu'un utilisateur puisse appliquer ou retirer un style visuel à un nœud individuel. Cette action est désormais possible via un endpoint d'API dédié, sécurisé et transactionnel, qui garantit la cohérence de l'artefact Mermaid après chaque modification.
+
+#### 2. Décomposition de l'Implémentation Technique
+
+| Fichier | Rôle | Modifications Clés |
+| :--- | :--- | :--- |
+| `backend/app/schemas.py` | Validation de Données | Ajout du schéma `NodeStyleUpdate` pour valider les requêtes `PATCH`. |
+| `backend/app/services/nodes.py` | Logique Métier | Implémentation de la fonction `update_node_style` qui gère la validation et la mise à jour atomique. |
+| `backend/app/routes/nodes.py` | Couche Présentation | Création de l'endpoint `PATCH /api/nodes/<id>/style`. |
+
+##### 2.1. Schémas (`backend/app/schemas.py`)
+Un schéma Pydantic minimaliste, `NodeStyleUpdate`, a été introduit. Il définit un unique champ optionnel, `style_name: Optional[str]`, assurant que le payload des requêtes est propre et correspond exactement à l'attente du service.
+
+##### 2.2. Service Layer (`backend/app/services/nodes.py`)
+La nouvelle fonction `update_node_style` est le cœur de cette fonctionnalité. Sa logique est la suivante :
+1.  **Validation (AC 2.5) :** Avant d'appliquer un style, la fonction vérifie que le nom du style (`style_name`) correspond bien à une `ClassDef` existante *au sein du même `SubProject` que le nœud cible*. Cela prévient toute application de style invalide ou inter-projet.
+2.  **Mise à Jour (AC 2.6) :** L'attribut `Node.style_class_ref` est mis à jour avec le `style_name` fourni. Si `style_name` est `null`, la référence de style est retirée du nœud.
+3.  **Cohérence de l'Artefact (AC 2.7) :** Immédiatement après la mise à jour du nœud (et avant le `commit`), la fonction `generate_mermaid_from_subproject` est appelée. Cela assure que le champ `SubProject.mermaid_definition` est régénéré pour refléter le changement de style (ajout ou suppression de la ligne `class ...`), maintenant ainsi une cohérence parfaite entre le modèle de données et sa représentation textuelle.
+
+##### 2.3. Route API (`backend/app/routes/nodes.py`)
+Conformément aux principes RESTful, un endpoint `PATCH /api/nodes/<int:node_id>/style` a été créé. Le verbe `PATCH` est utilisé car il s'agit d'une mise à jour partielle et ciblée d'un seul attribut du nœud. La route se charge de valider la requête via le schéma `NodeStyleUpdate` et d'orchestrer l'appel au service `update_node_style`.
+
+#### 3. Validation et Adéquation à l'Architecture (DDA V2.0)
+
+Cette implémentation adresse directement plusieurs points critiques du DDA V2.0 :
+*   **AC 2.5 (Validation de Style) & AC 2.6 (Retrait de Style) :** Entièrement couverts par la logique du service `update_node_style`.
+*   **AC 2.7 (Déclenchement de la Génération) :** Le principe de régénération systématique après toute modification structurelle est respecté, renforçant la fiabilité de `SubProject.mermaid_definition` comme source de vérité pour la visualisation.
+*   **AC 2.9 (Cohérence Bidirectionnelle) :** L'audit des services `mermaid_parser.py` et `mermaid_generator.py` a confirmé leur robustesse. Ils sont capables de lire et d'écrire la syntaxe `class <mermaid_id> <style_ref>`, ce qui garantit que les styles appliqués via cette nouvelle API seront correctement persistés lors des cycles de synchronisation complets.
+
+#### 4. Conclusion
+
+L'API backend est désormais équipée pour gérer le cycle de vie complet de l'application des styles sur les nœuds. Cette étape débloque le développement de l'interface utilisateur correspondante. L'équipe frontend peut maintenant s'appuyer sur cet endpoint pour permettre aux utilisateurs de styliser leurs graphes de manière interactive.
