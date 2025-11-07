@@ -177,3 +177,11 @@ curl http://localhost:5001/api/health
 - ✅ **Format JSON simplifié validé** : L'utilisateur peut utiliser le format direct `{"632": "texte...", "633": "texte..."}` sans clé wrapper
 - ✅ **Conformité schéma backend** : Alignement avec `NodeContentImport` Pydantic (snake_case)
 - ✅ **Typage TypeScript amélioré** : Generic explicite `{ content_map: Record<string, string> }`
+
+### 7 novembre 2025 - Correction critique du bug de transaction
+- ✅ **Bug de persistance résolu** : Suppression de `db.session.begin()` dans `import_node_content` (backend/app/services/nodes.py)
+- 🐛 **Problème identifié** : La sous-transaction créée par `begin()` n'était jamais committée au niveau supérieur, causant un rollback automatique
+- ✅ **Conséquences corrigées** : 
+  - Les données sont maintenant correctement persistées dans la base de données
+  - Les IDs auto-incrémentés restent stables entre les imports (plus de changement d'IDs)
+- ✅ **Architecture validée** : La gestion des transactions suit maintenant les mêmes patterns que les autres services CRUD
