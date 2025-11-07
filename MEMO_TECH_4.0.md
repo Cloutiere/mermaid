@@ -108,3 +108,45 @@ Le backend est prêt. L'équipe Frontend peut désormais commencer l'implémenta
 4.  **Crucial :** Après chaque opération réussie, rafraîchir les données du `SubProject` pour récupérer la nouvelle `mermaid_definition` et forcer le `MermaidViewer` à se redessiner.
 
 Le backend garantit la logique et la cohérence des données ; le frontend peut se concentrer sur l'expérience utilisateur.
+
+## Mémorandum Technique : Finalisation du Parsing des Subgraphs
+
+**À :** Chef de Projet
+**De :** Codeur Sénior / Architecte Logiciel
+**Date :** 10 novembre 2025
+**Objet :** **Finalisation et Validation de la Synchronisation Bidirectionnelle des Subgraphs (AC 4.10)**
+
+---
+
+### **Synthèse Exécutive**
+
+La mise à jour du service de parsing (`services/mermaid_parser.py`) est **terminée, testée et validée**. Le système est désormais capable d'interpréter la syntaxe `subgraph ... end` lors de l'importation ou de la mise à jour de code Mermaid.
+
+Cette implémentation remplit le critère d'acceptation critique **AC 4.10**, garantissant que la structure hiérarchique (`SubProject` -> `Subgraph` -> `Node`) est automatiquement synchronisée depuis le code Mermaid vers la base de données. L'intégrité des données est assurée par une logique robuste qui dissocie la reconnaissance de la structure de la création des entités, conformément au DDA v4.0.
+
+### **1. Architecture de Synchronisation Implémentée**
+
+Conformément aux principes du DDA, la logique de parsing a été étendue sans altérer le principe de gestion des `Subgraph` via une API dédiée.
+
+*   **Reconnaissance de Structure :** Le parseur utilise désormais des expressions régulières (`SUBGRAPH_START_PATTERN`, `SUBGRAPH_END_PATTERN`) pour détecter les blocs `subgraph`. Une logique de suivi d'état (`current_subgraph_mermaid_id`) a été introduite pour associer les nœuds à leur conteneur parent durant l'analyse.
+*   **Logique d'Affectation Transactionnelle :** La fonction `synchronize_subproject_entities` a été refactorisée pour exécuter la synchronisation en plusieurs étapes sécurisées :
+    1.  **Désaffectation Globale :** Une requête `UPDATE` en masse met d'abord `Node.subgraph_id` à `NULL` pour tous les nœuds du projet. Cela garantit une base saine et gère nativement les cas de retrait d'un nœud d'un subgraph.
+    2.  **Validation d'Existence :** Le parseur vérifie que les `mermaid_id` des subgraphs détectés dans le code correspondent à des entités `Subgraph` **existant déjà** en base de données. **Aucun `Subgraph` n'est créé lors du parsing**, ce qui préserve l'intégrité métier (la création doit passer par l'API).
+    3.  **Réaffectation en Masse :** Pour chaque `Subgraph` valide identifié, une seconde requête `UPDATE` en masse assigne le `subgraph_id` correct à la liste des nœuds concernés. Cette approche est performante et atomique.
+
+### **2. Validation des Comportements Clés**
+
+Les tests de vérification ont confirmé que l'implémentation respecte rigoureusement les exigences fonctionnelles et les cas limites :
+
+| Scénario de Test | Comportement Attendu (DDA) | Résultat de la Vérification |
+| :--- | :--- | :--- |
+| **Import Nominal** | Les nœuds définis dans un bloc `subgraph` existant sont correctement liés via `Node.subgraph_id`. | ✅ **Succès** |
+| **Désaffectation via Code** | Un nœud déplacé hors d'un bloc `subgraph` dans le code voit son `Node.subgraph_id` mis à `NULL`. | ✅ **Succès** |
+| **Gestion d'un Subgraph Inconnu** | Un bloc `subgraph` dont le `mermaid_id` n'existe pas en base est ignoré ; les nœuds qu'il contient sont désaffectés. | ✅ **Succès** |
+| **Préservation des Entités** | Le processus de parsing ne supprime jamais une entité `Subgraph` de la base, même si elle n'est plus référencée dans le code. | ✅ **Succès** |
+
+### **3. Conclusion et Impact**
+
+La promesse de **cohérence bidirectionnelle** est désormais pleinement réalisée pour la structure hiérarchique des graphes. Les utilisateurs peuvent importer et éditer du code Mermaid complexe en toute confiance, sachant que la structure de données sous-jacente reflétera fidèlement leurs intentions visuelles.
+
+Le backend est maintenant complet sur l'ensemble du cycle de vie des `Subgraph`, couvrant la création via API (Bloc 1), la liaison (Bloc 2) et la synchronisation depuis le code (Bloc 4).
