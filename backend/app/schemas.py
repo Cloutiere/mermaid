@@ -1,5 +1,5 @@
 # backend/app/schemas.py
-# Version 1.2
+# Version 1.3
 
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, ConfigDict, Field
@@ -59,11 +59,43 @@ class NodeCreate(NodeBase):
 class NodeRead(NodeBase):
     """Schéma utilisé pour la lecture (réponse API) d'un nœud."""
     id: int
+    subgraph_id: Optional[int] = None
     model_config = ConfigDict(from_attributes=True)
 
 class NodeStyleUpdate(BaseModel):
     """Schéma pour l'application ou le retrait d'une référence de style."""
     style_name: Optional[str] = Field(None, description="Nom de la ClassDef à appliquer, ou None pour retirer.")
+
+# --- Définitions pour les Subgraphs ---
+
+class SubgraphBase(BaseModel):
+    """Schéma de base pour un Subgraph."""
+    subproject_id: int
+    mermaid_id: str = Field(..., max_length=50)
+    title: str = Field(..., max_length=255)
+    style_class_ref: Optional[str] = Field(None, max_length=100)
+
+class SubgraphRead(SubgraphBase):
+    """Schéma de lecture d'un Subgraph, incluant les nœuds."""
+    id: int
+    nodes: List["NodeRead"] = []
+    model_config = ConfigDict(from_attributes=True)
+
+class SubgraphCreatePayload(BaseModel):
+    """Schéma pour la création d'un Subgraph avec affectation initiale de nœuds."""
+    subproject_id: int
+    title: str = Field(..., max_length=255)
+    style_class_ref: Optional[str] = Field(None, max_length=100)
+    node_ids: List[int] = Field(default_factory=list, description="IDs des nœuds à affecter au nouveau subgraph.")
+
+class SubgraphUpdatePayload(BaseModel):
+    """Schéma pour la mise à jour des métadonnées d'un Subgraph."""
+    title: str = Field(..., max_length=255)
+    style_class_ref: Optional[str] = Field(None, max_length=100)
+
+class NodeAssignmentPayload(BaseModel):
+    """Schéma pour affecter ou désaffecter des nœuds à un Subgraph."""
+    node_ids: List[int] = Field(..., description="Liste des IDs de nœuds à affecter/désaffecter.")
 
 # --- Définitions de niveau intermédiaire : SubProject ---
 
@@ -86,6 +118,7 @@ class SubProjectRead(SubProjectBase):
     nodes: List[NodeRead] = []
     relationships: List[RelationshipRead] = []
     class_defs: List[ClassDefRead] = []
+    subgraphs: List[SubgraphRead] = []
 
     model_config = ConfigDict(from_attributes=True)
 

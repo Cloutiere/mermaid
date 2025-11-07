@@ -1,5 +1,5 @@
 # backend/app/__init__.py
-# Version 1.1
+# Version 1.2
 import os
 from flask import Flask, Blueprint, jsonify
 from flask_cors import CORS
@@ -56,7 +56,7 @@ def create_app(config_name: str | None = None):
     CORS(app, resources={r"/api/*": {
         "origins": config.FRONTEND_URL,
         "supports_credentials": True,
-        "methods": ["GET", "POST", "PUT", "DELETE"]
+        "methods": ["GET", "POST", "PUT", "DELETE", "PATCH"]
     }})
 
     # Initialisation des extensions avec l'application
@@ -81,6 +81,7 @@ def create_app(config_name: str | None = None):
     from app.routes.nodes import nodes_bp
     from app.routes.mermaid import mermaid_bp
     from app.routes.classdefs import classdefs_bp
+    from app.routes.subgraphs import subgraphs_bp # NOUVEAU
 
     # Blueprints d'API structurés
     app.register_blueprint(projects_bp, url_prefix='/api/projects')
@@ -88,5 +89,6 @@ def create_app(config_name: str | None = None):
     app.register_blueprint(nodes_bp, url_prefix='/api/nodes')
     app.register_blueprint(mermaid_bp, url_prefix='/api/mermaid')
     app.register_blueprint(classdefs_bp, url_prefix='/api/classdefs')
+    app.register_blueprint(subgraphs_bp, url_prefix='/api/subgraphs') # NOUVEAU
 
     return app

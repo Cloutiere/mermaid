@@ -1,0 +1,47 @@
+Instructions :
+Assurez-vous que l'environnement virtuel Python est activé.
+Placez les fichiers schemas.py, mermaid_generator.py, subgraphs.py, subgraphs_bp.py, subprojects.py et __init__.py aux chemins respectifs indiqués dans le plan.
+Vérifiez que votre base de données est à jour avec la migration qui a créé la table subgraph et ajouté la colonne subgraph_id à node. Si ce n'est pas le cas, vous devez exécuter la migration correspondante (par exemple, flask db upgrade).
+Lancez l'application backend Flask (flask run).
+Vérification :
+Utilisez un client API (comme Postman, Insomnia ou curl) pour tester les nouvelles routes :
+Création d'un Subgraph (POST /api/subgraphs/) :
+Créez un SubProject et quelques nœuds si vous n'en avez pas. Notez les IDs des nœuds.
+Envoyez une requête POST à /api/subgraphs/ avec un payload JSON comme :
+code
+JSON
+{
+  "subproject_id": 1,
+  "title": "Introduction Characters",
+  "node_ids": [1, 2]
+}
+Vérifiez que la réponse est un JSON représentant le nouveau subgraph avec un statut 201 Created. Le mermaid_definition du SubProject parent devrait maintenant contenir un bloc subgraph ... end.
+Mise à jour d'un Subgraph (PUT /api/subgraphs/<id>) :
+Envoyez une requête PUT à /api/subgraphs/<id> (avec l'ID du subgraph créé) et un payload :
+code
+JSON
+{
+  "title": "Main Characters Introduction",
+  "style_class_ref": null
+}
+Vérifiez la réponse 200 OK et que le titre a bien été mis à jour.
+Assignation de nœuds (PATCH /api/subgraphs/<id>/assign_nodes) :
+Envoyez une requête PATCH à l'URL correspondante avec le payload :
+code
+JSON
+{
+  "node_ids": [1, 2, 3]
+}
+Vérifiez que le nœud avec l'ID 3 est maintenant dans le subgraph.
+Désassignation de nœuds (PATCH /api/subgraphs/<id>/unassign_nodes) :
+Envoyez une requête PATCH avec le payload :
+code
+JSON
+{
+  "node_ids": [2]
+}
+Vérifiez que le nœud 2 n'est plus dans le subgraph.
+Suppression d'un Subgraph (DELETE /api/subgraphs/<id>) :
+Envoyez une requête DELETE à l'URL du subgraph.
+Vérifiez que la réponse est 204 No Content.
+Vérifiez que les nœuds qui étaient dans ce subgraph ont maintenant leur subgraph_id à null

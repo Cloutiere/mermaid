@@ -1,12 +1,12 @@
 # backend/app/services/mermaid_generator.py
-# Version 1.1
+# Version 1.2
 
 from typing import List, Dict
 from sqlalchemy.orm import selectinload
 from werkzeug.exceptions import NotFound
 
 from app import db
-from app.models import SubProject, Node, Relationship, ClassDef, LinkType
+from app.models import SubProject, Node, Relationship, ClassDef, LinkType, Subgraph
 
 # --- Constantes ---
 RELATIONSHIP_LINK_MAP = {
@@ -20,10 +20,11 @@ def _sanitize_title(title: str, default_id: str) -> str:
         return default_id
 
     # Échapper les guillemets internes si le titre est long
-    safe_title = title.replace('"', '#quot;') 
+    safe_title = title.replace('"', '#quot;')
 
     # Si le titre contient des espaces ou des caractères spéciaux, le mettre entre guillemets
-    if ' ' in title or '[' in title or ']' in title or '{' in title or '}' in title:
+    # Le titre d'un subgraph peut contenir des crochets, il faut les autoriser
+    if ' ' in title:
         return f'"{safe_title}"'
 
     return safe_title
@@ -32,7 +33,7 @@ def _sanitize_title(title: str, default_id: str) -> str:
 def generate_mermaid_from_subproject(subproject_id: int) -> str:
     """
     Génère le code Mermaid complet à partir des entités de la base de données
-    pour un SubProject donné.
+    pour un SubProject donné, en incluant les subgraphs.
     """
 
     # 1. Charger le SubProject avec toutes ses relations (eager loading)
@@ -41,7 +42,8 @@ def generate_mermaid_from_subproject(subproject_id: int) -> str:
         .options(
             selectinload(SubProject.nodes), # type: ignore[arg-type]
             selectinload(SubProject.relationships), # type: ignore[arg-type]
-            selectinload(SubProject.class_defs) # type: ignore[arg-type]
+            selectinload(SubProject.class_defs), # type: ignore[arg-type]
+            selectinload(SubProject.subgraphs).options(selectinload(Subgraph.nodes)) # type: ignore[arg-type]
         )
         .filter(SubProject.id == subproject_id)
     ).scalar_one_or_none()
@@ -49,11 +51,9 @@ def generate_mermaid_from_subproject(subproject_id: int) -> str:
     if subproject is None:
         raise NotFound(f"SubProject ID {subproject_id} non trouvé.")
 
-    # Utiliser le SubProject pour commencer la génération
     mermaid_parts: List[str] = []
 
     # --- 2. Déclaration du type de graphe ---
-    # Utilise la direction stockée dans la base de données
     mermaid_parts.append(f"graph {subproject.graph_direction}")
     mermaid_parts.append("")
 
@@ -64,52 +64,66 @@ def generate_mermaid_from_subproject(subproject_id: int) -> str:
             mermaid_parts.append(f"classDef {class_def.name} {class_def.definition_raw}")
         mermaid_parts.append("")
 
-    # Indexation des nœuds pour référence rapide
-    nodes_map: Dict[int, Node] = {node.id: node for node in subproject.nodes}
+    # --- 4. Définition des Nœuds et Subgraphs ---
+    mermaid_parts.append("%% Nodes & Subgraphs Definitions")
 
-    # Dictionnaire des classes appliquées (pour éviter la redondance)
-    node_classes_applied: Dict[str, str] = {} 
+    # Nœuds qui ne sont dans aucun subgraph
+    nodes_without_subgraph = [node for node in subproject.nodes if node.subgraph_id is None]
 
-    # --- 4. Définition des Nœuds (A[Title]) ---
-    mermaid_parts.append("%% Node Definitions")
-    for node in subproject.nodes:
-        # Le contenu du nœud Mermaid (le titre affiché) est pris en priorité
-        # si `title` est null, on fallback sur `text_content` qui ne devrait pas l'être.
+    for node in nodes_without_subgraph:
         title = node.title if node.title is not None else node.text_content
         safe_title = _sanitize_title(title, node.mermaid_id)
+        mermaid_parts.append(f"    {node.mermaid_id}[{safe_title}]")
 
-        # On utilise la syntaxe A[Title] pour définir le nœud
-        mermaid_parts.append(f"{node.mermaid_id}[{safe_title}]")
-
-        # Enregistrer les références de classe si elles existent
-        if node.style_class_ref:
-            node_classes_applied[node.mermaid_id] = node.style_class_ref
+    # Itérer sur les subgraphs
+    if subproject.subgraphs:
+        for subgraph in subproject.subgraphs:
+            safe_subgraph_title = _sanitize_title(subgraph.title, subgraph.mermaid_id)
+            mermaid_parts.append(f"subgraph {subgraph.mermaid_id}[{safe_subgraph_title}]")
+            for node in subgraph.nodes:
+                title = node.title if node.title is not None else node.text_content
+                safe_title = _sanitize_title(title, node.mermaid_id)
+                mermaid_parts.append(f"    {node.mermaid_id}[{safe_title}]")
+            mermaid_parts.append("end")
+            mermaid_parts.append("")
 
     mermaid_parts.append("")
 
-    # --- 5. Application des Classes (class A class_ref) ---
+    # --- 5. Application des Classes (sur nœuds et subgraphs) ---
+    mermaid_parts.append("%% Class Applications")
+    node_classes_applied = {
+        node.mermaid_id: node.style_class_ref
+        for node in subproject.nodes if node.style_class_ref
+    }
+    subgraph_classes_applied = {
+        subgraph.mermaid_id: subgraph.style_class_ref
+        for subgraph in subproject.subgraphs if subgraph.style_class_ref
+    }
+
     if node_classes_applied:
-        mermaid_parts.append("%% Node Classes")
         for mermaid_id, class_ref in node_classes_applied.items():
             mermaid_parts.append(f"class {mermaid_id} {class_ref}")
-        mermaid_parts.append("")
+    if subgraph_classes_applied:
+        for mermaid_id, class_ref in subgraph_classes_applied.items():
+            mermaid_parts.append(f"class {mermaid_id} {class_ref}")
+    mermaid_parts.append("")
+
 
     # --- 6. Définition des Relations (A-->B) ---
     mermaid_parts.append("%% Relationships")
+    nodes_map: Dict[int, Node] = {node.id: node for node in subproject.nodes}
     for rel in subproject.relationships:
         source_node = nodes_map.get(rel.source_node_id)
         target_node = nodes_map.get(rel.target_node_id)
 
         if not source_node or not target_node:
-            # Ceci ne devrait pas se produire si l'intégrité BD est respectée
             continue
 
-        connector = RELATIONSHIP_LINK_MAP.get(rel.link_type, "---") # Par défaut invisible
+        connector = RELATIONSHIP_LINK_MAP.get(rel.link_type, "---")
 
         label_part = ""
         if rel.label:
-            # Assainissement de l'étiquette (les étiquettes doivent être entre | |)
-            safe_label = rel.label.replace('|', '/') 
+            safe_label = rel.label.replace('|', '/')
             label_part = f"|{safe_label}|"
 
         mermaid_parts.append(
