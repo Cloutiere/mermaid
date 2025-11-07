@@ -185,3 +185,23 @@ curl http://localhost:5001/api/health
   - Les données sont maintenant correctement persistées dans la base de données
   - Les IDs auto-incrémentés restent stables entre les imports (plus de changement d'IDs)
 - ✅ **Architecture validée** : La gestion des transactions suit maintenant les mêmes patterns que les autres services CRUD
+
+### 7 novembre 2025 (suite) - Refactorisation majeure : séparation structure/métadonnées
+- 🎯 **Problème résolu** : Destruction des nœuds à chaque sauvegarde après import JSON
+  - L'import JSON mettait à jour `text_content` des nœuds
+  - La sauvegarde appelait `synchronize_subproject_entities` qui SUPPRIMAIT tous les nœuds et les recréait
+  - Résultat : Nouveaux IDs et perte des `text_content` importés
+- ✅ **Solution architecturale (Option B)** : Séparation des mises à jour structurelles vs métadonnées
+  - **Nouveau schéma** : `SubProjectMetadataUpdate` pour mises à jour partielles (title + visual_layout uniquement)
+  - **Services refactorisés** :
+    - `update_subproject_structure()` : Mise à jour avec reconstruction complète (appelle `synchronize_subproject_entities`)
+    - `update_subproject_metadata()` : Mise à jour métadonnées uniquement (SANS synchronisation des entités)
+  - **API étendue** :
+    - `PUT /api/subprojects/<id>` : Détecte changements Mermaid et appelle le service approprié
+    - `PATCH /api/subprojects/<id>/metadata` : Nouveau endpoint pour mises à jour métadonnées
+  - **Frontend intelligent** :
+    - Fonction `normalizeMermaidCode()` pour comparer les définitions Mermaid
+    - `handleSave()` détecte les changements et choisit `updateSubProjectStructure` ou `patchSubProjectMetadata`
+- ✅ **Validation préservée** : Réintroduction de la validation d'unicité des titres dans les deux fonctions de mise à jour
+- ✅ **Révision architecte** : Validation complète de la refactorisation, pas de régression détectée
+- 📝 **Impact** : Les nœuds conservent maintenant leurs IDs et `text_content` après sauvegarde si seules les métadonnées changent
