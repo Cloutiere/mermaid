@@ -5,7 +5,14 @@ from flask import Blueprint, request, jsonify
 from pydantic import ValidationError
 from werkzeug.exceptions import BadRequest
 
-from app.services import subgraphs as subgraph_service
+from app.services.subgraph import (
+    create_subgraph,
+    get_subgraph_by_id,
+    update_subgraph,
+    delete_subgraph,
+    assign_nodes_to_subgraph,
+    unassign_nodes_from_subgraph,
+)
 from app.schemas import (
     SubgraphRead,
     SubgraphCreatePayload,

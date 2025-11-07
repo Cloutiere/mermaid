@@ -81,7 +81,7 @@ def create_app(config_name: str | None = None):
     from app.routes.nodes import nodes_bp
     from app.routes.mermaid import mermaid_bp
     from app.routes.classdefs import classdefs_bp
-    from app.routes.subgraphs import subgraphs_bp # NOUVEAU
+    from app.routes.subgraph import subgraphs_bp # NOUVEAU
 
     # Blueprints d'API structurés
     app.register_blueprint(projects_bp, url_prefix='/api/projects')
