@@ -1,5 +1,5 @@
 # backend/app/services/nodes.py
-# Version 1.1
+# Version 1.2
 
 from typing import List, Optional, Dict, Any
 from werkzeug.exceptions import NotFound, BadRequest
@@ -31,7 +31,7 @@ def get_node_by_id(node_id: int) -> Node:
 
 
 def create_node(data: NodeCreate) -> Node:
-    """Crée un nouveau nœud à partir des données validées."""
+    """Crée un nouveau nœud et met à jour la définition Mermaid du subproject."""
     subproject = db.session.get(SubProject, data.subproject_id)
     if subproject is None:
         raise NotFound(f"SubProject with ID {data.subproject_id} not found.")
@@ -49,6 +49,12 @@ def create_node(data: NodeCreate) -> Node:
 
     try:
         db.session.add(node)
+        # Flush pour que le nouveau nœud soit visible par le générateur
+        db.session.flush()
+
+        # Régénérer et mettre à jour la définition Mermaid du subproject
+        subproject.mermaid_definition = generate_mermaid_from_subproject(subproject.id)
+
         db.session.commit()
         db.session.refresh(node)
     except IntegrityError:
@@ -59,12 +65,13 @@ def create_node(data: NodeCreate) -> Node:
 
 
 def update_node(node_id: int, data: NodeCreate) -> Node:
-    """Met à jour un nœud existant. Lève 404 si non trouvé."""
+    """Met à jour un nœud existant et met à jour la définition Mermaid du subproject."""
     node = get_node_by_id(node_id)
+    original_subproject_id = node.subproject_id
 
     if data.subproject_id != node.subproject_id:
-        subproject = db.session.get(SubProject, data.subproject_id)
-        if subproject is None:
+        new_subproject = db.session.get(SubProject, data.subproject_id)
+        if new_subproject is None:
             raise NotFound(f"SubProject with ID {data.subproject_id} not found.")
 
     title = data.title if data.title is not None else data.mermaid_id
@@ -77,6 +84,21 @@ def update_node(node_id: int, data: NodeCreate) -> Node:
     node.style_class_ref = data.style_class_ref
 
     try:
+        # Flush pour que les modifications du nœud soient visibles par le générateur
+        db.session.flush()
+
+        # Régénérer la définition pour le subproject concerné
+        subproject = db.session.get(SubProject, original_subproject_id)
+        if subproject:
+            subproject.mermaid_definition = generate_mermaid_from_subproject(subproject.id)
+
+        # Si le nœud a été déplacé, l'ancien subproject doit aussi être mis à jour
+        if data.subproject_id != original_subproject_id:
+            old_subproject = db.session.get(SubProject, original_subproject_id)
+            if old_subproject:
+                old_subproject.mermaid_definition = generate_mermaid_from_subproject(old_subproject.id)
+
+
         db.session.commit()
         db.session.refresh(node)
     except IntegrityError:
@@ -89,7 +111,15 @@ def update_node(node_id: int, data: NodeCreate) -> Node:
 def delete_node(node_id: int) -> bool:
     """Supprime un nœud par ID. Lève 404 si non trouvé."""
     node = get_node_by_id(node_id)
+    subproject_id = node.subproject_id # Garder l'ID avant la suppression
+
     db.session.delete(node)
+
+    # Régénération après la suppression
+    subproject = db.session.get(SubProject, subproject_id)
+    if subproject:
+        subproject.mermaid_definition = generate_mermaid_from_subproject(subproject_id)
+
     db.session.commit()
     return True
 
@@ -97,7 +127,7 @@ def import_node_content(subproject_id: int, content_map: Dict[str, str]) -> Dict
     """
     Importe en masse le contenu textuel pour les nœuds d'un subproject.
     Cette opération est transactionnelle et met à jour la définition Mermaid.
-    
+
     Accepte les clés du content_map soit comme IDs numériques (ex: "1136") 
     soit comme mermaid_id (ex: "A001").
     """
@@ -109,27 +139,27 @@ def import_node_content(subproject_id: int, content_map: Dict[str, str]) -> Dict
         # Séparer les clés en IDs numériques vs mermaid_id
         numeric_ids = []
         mermaid_ids = []
-        
+
         for key in content_map.keys():
             try:
                 numeric_ids.append(int(key))
             except ValueError:
                 mermaid_ids.append(key)
-        
+
         # Construire la requête pour chercher par ID OU mermaid_id
         conditions = []
         if numeric_ids:
             conditions.append(Node.id.in_(numeric_ids))
         if mermaid_ids:
             conditions.append(Node.mermaid_id.in_(mermaid_ids))
-        
+
         if not conditions:
             # Aucune clé valide fournie
             return {
                 'updated_count': 0,
                 'ignored_ids': list(content_map.keys())
             }
-        
+
         nodes_to_update_query = db.select(Node).where(
             Node.subproject_id == subproject_id,
             db.or_(*conditions)
@@ -145,14 +175,14 @@ def import_node_content(subproject_id: int, content_map: Dict[str, str]) -> Dict
             # Chercher le contenu soit par ID numérique soit par mermaid_id
             content = None
             matched_key = None
-            
+
             if str(node.id) in content_map:
                 content = content_map[str(node.id)]
                 matched_key = str(node.id)
             elif node.mermaid_id in content_map:
                 content = content_map[node.mermaid_id]
                 matched_key = node.mermaid_id
-            
+
             if content is not None:
                 node.text_content = content
                 updated_keys.add(matched_key)

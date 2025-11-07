@@ -501,3 +501,56 @@ Les points suivants, issus de la section 5 du DDA, ont été validés par l'impl
 3.  L'implémentation FNS 1 (Import JSON) n'a pas été abordée.
 
 Nous sommes prêts pour la mise en production de l'UI de gestion des styles et du contrôle de layout, en attendant l'implémentation des services de transformation backend associés.
+
+
+**MÉMORANDUM TECHNIQUE DÉTAILLÉ : ARCHITECTURE MERMAID V2.0**
+
+**À l'attention de :** Chef de Projet / Équipe de Développement
+**De la part de :** Architecte Logiciel Sénior
+**Date :** [Date du jour]
+**Objet :** Synthèse et Validation de l'Architecture V2.0 pour l'Éditeur Visuel Mermaid
+
+---
+
+Ce document consolide les décisions d'architecture prises (DDA V2.0) et confirme l'implémentation des premières étapes critiques visant à stabiliser la cohérence des données structurelles (synchronisation Node/SubProject) avant le déploiement des nouvelles fonctionnalités métier.
+
+### I. État d'Avancement et Validation de la Cohérence (AC 2.7)
+
+La première tâche exécutée a été la correction de la synchronisation de l'artefact dérivé (`SubProject.mermaid_definition`) suite aux modifications atomiques sur les entités fondamentales (`Node`).
+
+**Action Réalisée :** Ajout de la logique de régénération dans `backend/app/services/nodes.py` pour `create_node`, `update_node`, et `delete_node`.
+
+**Justification Critique :** En SQLAlchemy, les relations et les attributs dérivés doivent être explicitement mis à jour lors des modifications. L'utilisation de `db.session.flush()` juste avant la génération permet de s'assurer que le générateur utilise l'état le plus récent du nœud sans commettre la transaction entière prématurément, garantissant ainsi que la régénération se produit dans le cadre de l'unité de travail transactionnelle initiale.
+
+### II. Synthèse des Initiatives Architecturales Futures (DDA V2.0)
+
+L'architecture validée repose sur trois piliers d'évolution, dont les bases techniques sont désormais établies :
+
+#### A. FNS 1 : Importation de Contenu en Masse (Service `import_node_content`)
+
+*   **Statut :** Implémenté (voir `backend/app/services/nodes.py`).
+*   **Détails :** Le service est conçu pour accepter un mapping JSON (`mermaid_id` ou `node_id` vers `text_content`). Il gère la mise à jour des nœuds en une seule transaction et force la régénération de la définition Mermaid du SubProject après le succès des mises à jour. L'API retournera un rapport détaillé (`updated_count`, `ignored_ids`) comme spécifié dans le DDA.
+
+#### B. FNS 2 : Gestion Structurée des Styles (ClassDef CRUD et Cohérence Bidirectionnelle)
+
+Ceci est la prochaine priorité technique majeure pour assurer la complétude du modèle.
+
+*   **Modèle de Données :** L'entité `ClassDef` est finalisée (`backend/app/models.py`).
+*   **Services CRUD :** Un nouveau service et un nouveau Blueprint API devront être créés pour gérer `ClassDef`.
+*   **Cohérence Bidirectionnelle (Parser/Generator) :**
+    *   Le **Parser** (`mermaid_parser.py`, à implémenter) devra désormais extraire la syntaxe d'application de classe (`class A ref`) et la mapper vers `Node.style_class_ref`.
+    *   Le **Générateur** (`mermaid_generator.py`, à mettre à jour) doit lire `Node.style_class_ref` pour générer l'instruction `class {id} {ref}`.
+    *   **Point de Vigilance :** La suppression d'une `ClassDef` doit déclencher un nettoyage en cascade des références correspondantes dans tous les `Node` affectés, tout en déclenchant la mise à jour Mermaid.
+
+#### C. FNS 3 : Améliorations UX (Zoom/Pan/Layout)
+
+Ces changements sont majoritairement frontend mais nécessitent une architecture backend stable (ce qui est maintenant le cas avec la régénération de Mermaid).
+
+*   **Layout Dynamique :** Implémentation d'un contrôle d'état côté React pour redimensionner dynamiquement l'éditeur de code et le visualiseur.
+*   **Contrôle Visuel :** L'enveloppement du SVG Mermaid dans un conteneur gérant le zoom/pan est la voie recommandée, minimisant les interférences avec la logique interne de Mermaid.js.
+
+### III. Conclusion Architecturale
+
+L'architecture V2.0 est désormais robuste sur le plan de la persistance des structures de graphe, garantissant que les artefacts dérivés (définition Mermaid) sont toujours synchronisés avec la vérité du modèle relationnel. Les prochaines étapes se concentreront sur l'implémentation des CRUD pour les styles et la mise à jour des mécanismes de parsing pour l'importation des styles depuis Mermaid, comme planifié dans le DDA.
+
+**Prochaine Action Recommandée :** Procéder à la mise en œuvre des services CRUD pour `ClassDef` et la correction du `mermaid_parser.py` pour l'extraction des styles.
