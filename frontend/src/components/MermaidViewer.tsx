@@ -56,6 +56,8 @@ const MermaidViewer: React.FC<MermaidViewerProps> = ({ mermaidCode, onRenderStat
           startOnLoad: false,
           theme: 'default',
           securityLevel: 'loose',
+          // AJOUT CRITIQUE POUR GRANDS GRAPHES
+          maxEdges: 3000, // Augmente la limite de 500 à 3000 relations
         })
 
         await mermaid.parse(mermaidCode)
