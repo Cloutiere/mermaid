@@ -1,5 +1,5 @@
 // frontend/src/pages/GraphEditorPage.tsx
-// Version 2.1 (Intégration Import JSON)
+// Version 2.2 (Intégration StyleManagerModal)
 
 import { useParams, useNavigate } from 'react-router-dom'
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
@@ -7,7 +7,8 @@ import apiService from '@/services/api'
 import type { SubProjectRead, SubProjectCreate } from '@/types/api'
 import MermaidEditor from '@/components/MermaidEditor'
 import MermaidViewer from '@/components/MermaidViewer'
-import ImportContentModal from '@/components/ImportContentModal' // NOUVEAU
+import ImportContentModal from '@/components/ImportContentModal'
+import StyleManagerModal from '@/components/StyleManagerModal' // NOUVEAU
 
 // Fonction utilitaire déplacée à l'extérieur pour ne pas être recréée à chaque rendu
 const normalize = (code: string | null | undefined): string => {
@@ -37,7 +38,8 @@ function GraphEditorPage() {
   const [error, setError] = useState<string | null>(null)
   const [hasMermaidError, setHasMermaidError] = useState(false)
   const [editorWidthRatio, setEditorWidthRatio] = useState(50) // 50% pour l'éditeur
-  const [showJsonImportModal, setShowJsonImportModal] = useState(false) // NOUVEAU
+  const [showJsonImportModal, setShowJsonImportModal] = useState(false)
+  const [showStyleManagerModal, setShowStyleManagerModal] = useState(false) // NOUVEAU
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const subprojectIdNumber = subprojectId ? Number(subprojectId) : null
@@ -234,12 +236,20 @@ function GraphEditorPage() {
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
-  // NOUVEAU: Import Content (JSON)
+  // Import Content (JSON)
   const handleJsonImportSuccess = () => {
     setShowJsonImportModal(false)
     // AC 1.9 & AC 2.7: Forcer le rechargement du sous-projet pour obtenir la nouvelle mermaid_definition
     refetchSubProject(true) // Silent reload
   }
+
+  // NOUVEAU: Callback for Style Manager
+  const handleStyleChangeSuccess = () => {
+    // AC 2.7: Force a reload of the subproject to get the updated mermaid_definition
+    // after a style has been created, updated, or deleted.
+    refetchSubProject(true); // Silent reload
+  };
+
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 lg:p-8 flex flex-col">
@@ -310,7 +320,18 @@ function GraphEditorPage() {
         {/* Action buttons */}
         <div className="flex justify-end space-x-3">
           <button
-            onClick={() => setShowJsonImportModal(true)} // NOUVEAU BOUTON JSON
+            onClick={() => setShowStyleManagerModal(true)} // NOUVEAU BOUTON STYLE
+            disabled={isSaving || isExporting || loading}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition border ${
+              isSaving || isExporting || loading
+                ? 'bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed'
+                : 'bg-white text-purple-600 border-purple-300 hover:bg-purple-50'
+            }`}
+          >
+            Gérer Styles (ClassDef)
+          </button>
+          <button
+            onClick={() => setShowJsonImportModal(true)}
             disabled={isSaving || isExporting || loading}
             className={`px-4 py-2 rounded-md text-sm font-medium transition border ${
               isSaving || isExporting || loading
@@ -385,6 +406,16 @@ function GraphEditorPage() {
           onClose={() => setShowJsonImportModal(false)}
           onImportSuccess={handleJsonImportSuccess}
         />
+      )}
+
+      {/* NOUVEAU: Modal de Gestion des Styles */}
+      {showStyleManagerModal && subproject && (
+          <StyleManagerModal
+              isOpen={showStyleManagerModal}
+              onClose={() => setShowStyleManagerModal(false)}
+              subprojectId={subproject.id}
+              onStyleChange={handleStyleChangeSuccess}
+          />
       )}
     </div>
   )

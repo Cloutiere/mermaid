@@ -445,3 +445,59 @@ frontend/
 Date : 7 novembre 2025
 Révision architecte : Validée ✅
 Statut : Production-ready 🚀
+
+
+**MÉMORANDUM TECHNIQUE DÉTAILLÉ - PHASE DE DÉPLOIEMENT FRONTEND (FNS 2 & FNS 3)**
+
+**À :** Chef de Projet
+**De :** Architecte Logiciel Sénior
+**Date :** [Date du jour]
+**Objet :** Synthèse de l'Implémentation Frontend relative au DDA V2.0 - FNS 2 (Style CRUD) et FNS 3 (Layout)
+
+---
+
+### 1. Aperçu Général de l'Exécution
+
+Les tâches assignées concernant l'implémentation de l'interface utilisateur pour la gestion des styles (`ClassDef`, FNS 2) et l'amélioration du layout de l'éditeur (`GraphEditorPage`, FNS 3) ont été complétées et livrées. L'architecture client/serveur repose sur la consommation des endpoints CRUD déjà exposés par le backend sur `/api/classdefs/`.
+
+### 2. Implémentation FNS 2 : CRUD des Définitions de Style (ClassDef)
+
+Un nouveau composant modal, `StyleManagerModal.tsx`, a été créé pour fournir une interface complète de gestion des `ClassDef`.
+
+#### 2.1. Fonctionnalités du `StyleManagerModal`
+*   **Lecture (R) :** Chargement des styles existants via `apiService.getClassDefs(subprojectId)`.
+*   **Création/Modification (C & U) :** Le formulaire gère l'état de création ou d'édition, envoyant les payloads `ClassDefCreate` aux endpoints `/api/classdefs/` (POST ou PUT). Une validation simple des champs `name` et `definition_raw` est appliquée côté client.
+*   **Suppression (D) :** Appel à `apiService.deleteClassDef(id)` avec confirmation utilisateur.
+
+#### 2.2. Synchronisation des Données et Cohérence (Point Critique)
+Le point clé de cette implémentation est l'adhésion au principe de cohérence bidirectionnelle (AC 2.7).
+Chaque opération CRUD réussie dans le modal déclenche le callback `onStyleChange`, qui exécute la fonction `refetchSubProject(true)` dans `GraphEditorPage.tsx`.
+
+**Justification Technique :** Comme stipulé dans le DDA, toute modification sur une `ClassDef` doit déclencher une régénération du `mermaid_definition` côté serveur (via le Parser/Générateur mis à jour séparément). Le rafraîchissement silencieux du sous-projet côté client garantit que la nouvelle définition Mermaid est chargée, assurant ainsi que le `MermaidViewer` et les données de contexte du graphe reflètent immédiatement les changements structurels induits par la gestion des styles.
+
+### 3. Implémentation FNS 3 : Flexibilité du Layout de l'Éditeur
+
+La fonctionnalité de manipulation du layout de l'éditeur/visualiseur a été intégrée dans `GraphEditorPage.tsx` (visant l'AC 3.1).
+
+*   **Contrôle par Ratio :** Un sélecteur d'affichage a été ajouté dans l'en-tête, permettant de basculer entre des ratios prédéfinis (`0` (Vue seule), `25`, `50`, `75`, `100` (Éditeur seul)).
+*   **Implémentation CSS :** Les conteneurs de l'éditeur (`MermaidEditor`) et du visualiseur (`MermaidViewer`) utilisent désormais `flexBasis` basé sur l'état `editorWidthRatio`, offrant une séparation dynamique et adaptative de l'espace d'affichage.
+
+### 4. Récapitulatif des Livrables
+
+| Fichier | Statut | Notes |
+| :--- | :--- | :--- |
+| `frontend/src/components/StyleManagerModal.tsx` | **Créé** | Logique complète de gestion CRUD des styles. |
+| `frontend/src/pages/GraphEditorPage.tsx` | **Modifié** | Intégration du modal, gestion des états, implémentation du sélecteur de ratio de layout. |
+
+### 5. Points de Vigilance DDA Adressés et Prochaines Étapes
+
+Les points suivants, issus de la section 5 du DDA, ont été validés par l'implémentation frontend :
+*   **AC 2.7 (Déclenchement de la Génération) :** Assuré par la mécanique de rechargement post-modification du style.
+*   **Tests :** Les étapes de vérification manuelles ont confirmé la fonctionnalité CRUD des styles et la capacité du viewer à interpréter la syntaxe de classe Mermaid (ex: `class A styleName`).
+
+**Points Restants (Dépendants du Backend ou non-implémentés ici) :**
+1.  La correction critique de la bidirectionnalité dans `mermaid_parser.py` et `mermaid_generator.py` (AC 2.9) est une étape backend nécessaire pour que l'application effective des styles lors d'un rechargement complet du graphe soit fonctionnelle au-delà des tests manuels initiaux.
+2.  L'implémentation du Zoom/Pan (FNS 3) n'a pas été abordée dans cette étape, restant dépendante de l'intégration d'une librairie tierce ou d'une implémentation SVG avancée.
+3.  L'implémentation FNS 1 (Import JSON) n'a pas été abordée.
+
+Nous sommes prêts pour la mise en production de l'UI de gestion des styles et du contrôle de layout, en attendant l'implémentation des services de transformation backend associés.
