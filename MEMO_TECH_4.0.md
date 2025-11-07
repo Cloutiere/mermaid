@@ -244,3 +244,52 @@ Les critères d'acceptation structurants sont vérifiés :
 L'implémentation du DDA v4.0 est achevée. La gestion des sous-graphes est désormais une fonctionnalité stable du système.
 
 **Action Recommandée :** Procéder à la revue des tests de non-régression sur les fonctionnalités existantes (gestion des nœuds, des relations, des styles de base) pour s'assurer que l'ajout de cette nouvelle couche hiérarchique n'a pas introduit de régression.
+
+
+## Mémorandum Technique : Refactorisation de la Couche Éditeur avec Custom Hook
+
+**À :** Chef de Projet, Architecte Logiciel
+**De :** Codeur Sénior / Architecte Logiciel
+**Date :** 11 novembre 2025
+**Objet :** **Implémentation du Hook `useGraphEditor` et Simplification de `GraphEditorPage.tsx` (Bloc 3 - Suite)**
+
+---
+
+### **Synthèse Exécutive**
+
+La couche de gestion de l'état et de la logique asynchrone du composant `GraphEditorPage.tsx` a été **complètement extraite et refactorisée** dans un Custom Hook dédié : `useGraphEditor.ts`.
+
+Cette opération met fin à l'implémentation du DDA v4.0 en assurant que le Frontend respecte parfaitement le principe de responsabilité unique (SRP). Le composant de page est maintenant minimaliste et se concentre uniquement sur le rendu de l'interface utilisateur, tandis que le hook gère toute l'interaction avec l'API et le calcul des états dérivés (ex: `isDirty`).
+
+### **1. Détails de l'Implémentation (Quoi)**
+
+Deux fichiers principaux ont été livrés pour cette étape :
+
+#### 1.1. Création du Hook : `frontend/src/hooks/useGraphEditor.ts`
+Ce fichier est désormais le cœur de la gestion des données du sous-projet. Il implémente :
+*   La fonction utilitaire `normalize` pour la comparaison des chaînes Mermaid.
+*   La gestion complète des états (`subproject`, `loading`, `error`, `currentMermaidCode`) via `useState`.
+*   La logique de chargement initial et de rafraîchissement (`refetchSubProject` via `useEffect` et `useCallback`).
+*   La fonction de sauvegarde atomique (`saveMermaidCode`), intégrant la logique conditionnelle de décider d'appeler `updateSubProjectStructure` ou `patchSubProjectMetadata`.
+*   Le calcul de l'état dérivé `isDirty` via `useMemo`.
+
+#### 1.2. Simplification de la Page : `frontend/src/pages/GraphEditorPage.tsx`
+Le composant page a été nettoyé pour ne contenir que les aspects de présentation :
+*   Il importe et consomme uniquement le hook `useGraphEditor`.
+*   Les états internes ont été réduits aux seuls états spécifiques à l'interface utilisateur (ex: `editorWidthRatio`, état des modales).
+*   Les fonctions d'interaction (sauvegarde, export) appellent directement les méthodes exposées par le hook.
+*   Les callbacks des modales ont été standardisés pour appeler `refetchSubProject(true)` afin de s'assurer que l'UI reflète immédiatement le changement de données propagé par le backend.
+
+### **2. Justification Architecturale (Pourquoi)**
+
+Cette refactorisation répond à un besoin de **qualité logicielle accrue** sur le Frontend :
+
+*   **Clarté et Lisibilité :** Le composant `GraphEditorPage.tsx` est devenu beaucoup plus simple, rendant le flux de données évident pour tout futur développeur.
+*   **Isolation de la Logique Métier :** Toute la logique complexe liée aux appels API, aux transactions de sauvegarde et à la détection des changements est maintenant isolée dans le hook, facilitant sa maintenance et son débogage.
+*   **Standardisation du Contrat :** Le hook expose un contrat d'interface clair (états et fonctions) que le composant de présentation utilise, renforçant l'architecture basée sur la séparation des préoccupations.
+
+### **3. Conclusion et État Final**
+
+L'implémentation du DDA v4.0 est **achevée** sur tous les fronts (Modèle DB, Services Backend, Transformation Mermaid, et Frontend UI/Typage).
+
+La refactorisation finale assure que la couche de présentation frontend est désormais bien découplée et propre. L'application est prête pour la prochaine série de développements fonctionnels, bénéficiant d'une base de code plus robuste et modulaire.

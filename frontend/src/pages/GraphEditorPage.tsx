@@ -1,104 +1,100 @@
 // frontend/src/pages/GraphEditorPage.tsx
-// Version 2.4 (Intégration SubgraphManagerModal)
+// Version 3.0 (Refactoring with useGraphEditor Hook)
 
 import { useParams, useNavigate } from 'react-router-dom'
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
-import apiService from '@/services/api'
-import type { SubProjectRead, SubProjectCreate } from '@/types/api'
+import { useState, useMemo, useRef } from 'react'
+import { useGraphEditor } from '@/hooks/useGraphEditor' // NOUVEAU
+
 import MermaidEditor from '@/components/MermaidEditor'
 import MermaidViewer from '@/components/MermaidViewer'
 import ImportContentModal from '@/components/ImportContentModal'
 import StyleManagerModal from '@/components/StyleManagerModal'
 import ApplyStyleModal from '@/components/ApplyStyleModal'
-import SubgraphManagerModal from '@/components/SubgraphManagerModal' // NOUVEAU
-
-// Fonction utilitaire déplacée à l'extérieur pour ne pas être recréée à chaque rendu
-const normalize = (code: string | null | undefined): string => {
-  if (typeof code !== 'string') return ''
-  // 1. Uniformiser les fins de ligne
-  const unixCode = code.replace(/\r\n/g, '\n')
-  // 2. Supprimer les espaces blancs de début et de fin
-  return unixCode.trim()
-}
+import SubgraphManagerModal from '@/components/SubgraphManagerModal'
 
 function GraphEditorPage() {
-  // Définition des types attendus pour les paramètres d'URL
-  interface EditorParams {
-    projectId: string
-    subprojectId: string
-  }
-
-  const { projectId, subprojectId } = useParams<keyof EditorParams>() as EditorParams
+  // --- 1. Initialisation et Hooks ---
+  const { projectId, subprojectId } = useParams<{ projectId: string; subprojectId: string }>()
   const navigate = useNavigate()
+  const subprojectIdNumber = subprojectId ? Number(subprojectId) : null
 
-  // --- 1. Gestion des États ---
-  const [subproject, setSubProject] = useState<SubProjectRead | null>(null)
-  const [currentMermaidCode, setCurrentMermaidCode] = useState<string>('')
-  const [loading, setLoading] = useState(true)
-  const [isSaving, setIsSaving] = useState(false)
-  const [isExporting, setIsExporting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  // Le hook gère toute la logique de données
+  const {
+    subproject,
+    currentMermaidCode,
+    loading,
+    isSaving,
+    isExporting,
+    error,
+    isDirty,
+    setCurrentMermaidCode,
+    refetchSubProject,
+    saveMermaidCode,
+    handleExport,
+  } = useGraphEditor(subprojectIdNumber)
+
+  // États spécifiques à l'UI
   const [hasMermaidError, setHasMermaidError] = useState(false)
-  const [editorWidthRatio, setEditorWidthRatio] = useState(50) // 50% pour l'éditeur
+  const [editorWidthRatio, setEditorWidthRatio] = useState(50)
   const [showJsonImportModal, setShowJsonImportModal] = useState(false)
   const [showStyleManagerModal, setShowStyleManagerModal] = useState(false)
   const [showApplyStyleModal, setShowApplyStyleModal] = useState(false)
-  const [showSubgraphManagerModal, setShowSubgraphManagerModal] = useState(false) // NOUVEAU
+  const [showSubgraphManagerModal, setShowSubgraphManagerModal] = useState(false)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const subprojectIdNumber = subprojectId ? Number(subprojectId) : null
 
-  // --- 2. Fonctions de Chargement et Rechargement ---
-
-  const refetchSubProject = useCallback(
-    async (silent = false) => {
-      if (!subprojectIdNumber || isNaN(subprojectIdNumber)) {
-        setError('Erreur de routage: ID du sous-projet invalide ou manquant.')
-        if (!silent) setLoading(false)
-        return
-      }
-
-      if (!silent) {
-        setLoading(true)
-      }
-      setError(null)
-
-      try {
-        const data = await apiService.getSubProject(subprojectIdNumber)
-        setSubProject(data)
-        setCurrentMermaidCode(data.mermaid_definition || '')
-        return data // Retourne les données pour le cas d'un appel non-silent
-      } catch (err) {
-        console.error('Échec du chargement/rechargement du sous-projet:', err)
-        setError(
-          err instanceof Error ? err.message : 'Une erreur inconnue est survenue lors du chargement.'
-        )
-      } finally {
-        if (!silent) setLoading(false)
-      }
-    },
-    [subprojectIdNumber]
-  )
-
-  useEffect(() => {
-    refetchSubProject(false)
-  }, [refetchSubProject])
-
-  // --- 3. Logique de Détection de Changement (Hooks useMemo) ---
-  const isDirty = useMemo(() => {
-    if (!subproject || loading) return false
-    const originalCode = normalize(subproject.mermaid_definition)
-    const newCode = normalize(currentMermaidCode)
-    return newCode !== originalCode
-  }, [currentMermaidCode, subproject, loading])
-
+  // --- 2. Logique Dérivée pour l'UI ---
   const isSaveEnabled = useMemo(() => {
-    return !isSaving && !hasMermaidError && !!normalize(currentMermaidCode)
+    return !isSaving && !hasMermaidError && !!currentMermaidCode.trim()
   }, [isSaving, hasMermaidError, currentMermaidCode])
 
   const isSaveDisabled = !isSaveEnabled
 
-  // --- 4. Rendu Conditionnel (Chargement et Erreur) ---
+  // --- 3. Handlers d'UI ---
+  const handleBack = () => navigate('/')
+
+  // Import Structure (.mmd)
+  const handleImportClick = () => fileInputRef.current?.click()
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        if (e.target?.result && typeof e.target.result === 'string') {
+          setCurrentMermaidCode(e.target.result)
+        }
+      }
+      reader.onerror = () => {
+        // Idéalement, cet état d'erreur devrait aussi être géré par le hook.
+        // Pour cette refactorisation, on garde une alerte simple.
+        alert('Erreur lors de la lecture du fichier.')
+      }
+      reader.readAsText(file)
+    }
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  // --- 4. Callbacks des Modales ---
+  // Ces callbacks se contentent d'appeler le refetch du hook.
+  const handleJsonImportSuccess = () => {
+    setShowJsonImportModal(false)
+    refetchSubProject(true)
+  }
+
+  const handleStyleChangeSuccess = () => {
+    refetchSubProject(true)
+  }
+
+  const handleNodeStyleApplySuccess = () => {
+    refetchSubProject(true)
+  }
+
+  const handleSubgraphUpdateSuccess = () => {
+    refetchSubProject(true)
+  }
+
+  // --- 5. Rendu Conditionnel ---
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 p-8 flex justify-center items-center">
@@ -136,134 +132,10 @@ function GraphEditorPage() {
     { label: '25/75', ratio: 25 },
     { label: '50/50', ratio: 50 },
     { label: '75/25', ratio: 75 },
-    { label: 'Éditeur', ratio: 100 }
+    { label: 'Éditeur', ratio: 100 },
   ]
 
-  // --- 5. Handlers d'Action ---
-  const handleSave = async () => {
-    if (!subproject) return
-
-    setIsSaving(true)
-    setError(null)
-
-    try {
-      // Détecter si la définition Mermaid a changé
-      const mermaidChanged = normalize(currentMermaidCode) !== normalize(subproject.mermaid_definition)
-
-      let updatedData: SubProjectRead
-
-      if (mermaidChanged) {
-        // Si le code Mermaid a changé, reconstruire la structure (recrée les nœuds)
-        const payload: SubProjectCreate = {
-          project_id: subproject.project_id,
-          title: subproject.title,
-          mermaid_definition: currentMermaidCode,
-          visual_layout: subproject.visual_layout || null
-        }
-        updatedData = await apiService.updateSubProjectStructure(subproject.id, payload)
-      } else {
-        // Sinon, mettre à jour uniquement les métadonnées (garde les nœuds intacts)
-        updatedData = await apiService.patchSubProjectMetadata(subproject.id, {
-          title: subproject.title,
-          visual_layout: subproject.visual_layout || null
-        })
-      }
-
-      setSubProject(updatedData)
-      setCurrentMermaidCode(updatedData.mermaid_definition)
-      console.log('Sauvegarde réussie!', updatedData)
-    } catch (err) {
-      console.error('Échec de la sauvegarde:', err)
-      setError(
-        err instanceof Error ? err.message : 'Une erreur inconnue est survenue lors de la sauvegarde.'
-      )
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
-  const handleExport = async () => {
-    if (!subproject) return
-
-    setIsExporting(true)
-    setError(null)
-
-    try {
-      const mermaidCodeExported = await apiService.exportMermaid(subproject.id)
-
-      const blob = new Blob([mermaidCodeExported], { type: 'text/plain;charset=utf-8' })
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement('a')
-
-      const fileName = `${subproject.title.replace(/\s+/g, '_')}_export.mmd`
-      link.href = url
-      link.setAttribute('download', fileName)
-
-      document.body.appendChild(link)
-      link.click()
-
-      document.body.removeChild(link)
-      URL.revokeObjectURL(url)
-    } catch (err) {
-      console.error("Échec de l'exportation:", err)
-      setError(
-        err instanceof Error ? err.message : "Une erreur inconnue est survenue lors de l'exportation."
-      )
-    } finally {
-      setIsExporting(false)
-    }
-  }
-
-  const handleBack = () => {
-    navigate('/')
-  }
-
-  // Import Structure (.mmd)
-  const handleImportClick = () => {
-    fileInputRef.current?.click()
-  }
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        if (e.target?.result && typeof e.target.result === 'string') {
-          setCurrentMermaidCode(e.target.result)
-        }
-      }
-      reader.onerror = () => {
-        setError('Erreur lors de la lecture du fichier.')
-      }
-      reader.readAsText(file)
-    }
-    if (fileInputRef.current) fileInputRef.current.value = ''
-  }
-
-  // Import Content (JSON)
-  const handleJsonImportSuccess = () => {
-    setShowJsonImportModal(false)
-    // AC 1.9 & AC 2.7: Forcer le rechargement du sous-projet pour obtenir la nouvelle mermaid_definition
-    refetchSubProject(true) // Silent reload
-  }
-
-  // Callback for Style Manager
-  const handleStyleChangeSuccess = () => {
-    // AC 2.7: Force a reload of the subproject to get the updated mermaid_definition
-    // after a style has been created, updated, or deleted.
-    refetchSubProject(true) // Silent reload
-  }
-
-  // Callback for Apply Style Modal
-  const handleNodeStyleApplySuccess = () => {
-    refetchSubProject(true) // Silent reload pour AC 2.7
-  }
-
-  // NOUVEAU: Callback for Subgraph Manager Modal
-  const handleSubgraphUpdateSuccess = () => {
-    refetchSubProject(true) // Silent reload pour AC 4.10
-  }
-
+  // --- 6. Rendu du Composant ---
   return (
     <div className="min-h-screen bg-gray-50 p-4 lg:p-8 flex flex-col">
       <input
@@ -333,7 +205,7 @@ function GraphEditorPage() {
         {/* Action buttons */}
         <div className="flex flex-wrap justify-end gap-3">
           <button
-            onClick={() => setShowSubgraphManagerModal(true)} // NOUVEAU BOUTON
+            onClick={() => setShowSubgraphManagerModal(true)}
             disabled={isSaving || isExporting || loading}
             className={`px-4 py-2 rounded-md text-sm font-medium transition border ${
               isSaving || isExporting || loading
@@ -399,7 +271,7 @@ function GraphEditorPage() {
             {isExporting ? 'Exportation...' : 'Exporter'}
           </button>
           <button
-            onClick={handleSave}
+            onClick={saveMermaidCode}
             disabled={isSaveDisabled}
             className={`px-5 py-2 text-white rounded-md text-sm font-semibold transition ${
               isSaveDisabled
@@ -434,7 +306,7 @@ function GraphEditorPage() {
         )}
       </main>
 
-      {/* Modal d'Importation de Contenu JSON */}
+      {/* Modals */}
       {showJsonImportModal && subproject && (
         <ImportContentModal
           subprojectId={subproject.id}
@@ -442,8 +314,6 @@ function GraphEditorPage() {
           onImportSuccess={handleJsonImportSuccess}
         />
       )}
-
-      {/* Modal de Gestion des Styles */}
       {showStyleManagerModal && subproject && (
         <StyleManagerModal
           isOpen={showStyleManagerModal}
@@ -452,8 +322,6 @@ function GraphEditorPage() {
           onStyleChange={handleStyleChangeSuccess}
         />
       )}
-
-      {/* Modal d'Application de Style */}
       {showApplyStyleModal && subproject && (
         <ApplyStyleModal
           isOpen={showApplyStyleModal}
@@ -462,8 +330,6 @@ function GraphEditorPage() {
           onApplySuccess={handleNodeStyleApplySuccess}
         />
       )}
-
-      {/* NOUVEAU: Modal de Gestion des Subgraphs */}
       {showSubgraphManagerModal && subproject && (
         <SubgraphManagerModal
           isOpen={showSubgraphManagerModal}
