@@ -98,7 +98,6 @@ def import_node_content(subproject_id: int, content_map: Dict[str, str]) -> Dict
     Importe en masse le contenu textuel pour les nœuds d'un subproject.
     Cette opération est transactionnelle et met à jour la définition Mermaid.
     """
-    db.session.begin()
     try:
         subproject = db.session.get(SubProject, subproject_id)
         if subproject is None:
