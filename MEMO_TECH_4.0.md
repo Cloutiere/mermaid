@@ -151,3 +151,53 @@ La promesse de **cohérence bidirectionnelle** est désormais pleinement réalis
 
 Le backend est maintenant complet sur l'ensemble du cycle de vie des `Subgraph`, couvrant la création via API (Bloc 1), la liaison (Bloc 2) et la synchronisation depuis le code (Bloc 4).
 
+## Mémorandum Technique Final : Revue d'Intégration DDA v4.0 – Subgraphs
+
+**À :** Chef de Projet, Équipe d'Assurance Qualité
+**De :** Codeur Sénior / Architecte Logiciel
+**Date :** 11 novembre 2025
+**Objet :** **Synthèse de l'Implémentation Complète de la Gestion des Subgraphs (DDA v4.0) – Backend (Blocs 1, 2, 4) et Frontend (Bloc 3)**
+
+---
+
+### **Synthèse Exécutive**
+
+L'implémentation de la gestion des Sous-Graphes (Subgraphs), couvrant les Blocs 1, 2, 3 et 4 du DDA v4.0, est **terminée et validée**.
+
+Le système offre désormais une gestion hiérarchique complète :
+1.  **Persistance & CRUD (Backend)** : Via `/api/subgraphs/` (Bloc 1).
+2.  **Logique d'Affectation (Backend)** : Gestion transactionnelle du lien `Node <-> Subgraph` (Bloc 2).
+3.  **Contrats API & Typage (Frontend)** : Interfaces TypeScript synchronisées et méthodes d'appel implémentées dans `apiService` (Bloc 3).
+4.  **Synchronisation Bidirectionnelle (Transformation)** : Parsing et Génération Mermaid robustes pour maintenir la cohérence entre DB et Code Source (Bloc 4).
+
+### **1. Revue des Achèvements par Bloc Fonctionnel**
+
+#### **Bloc 1 & 2 : Modélisation et Logique Métier (Backend)**
+*   **Statut :** Terminé et documenté (via Mémos précédents).
+*   **Points Clés :** Création de l'entité `Subgraph`, implémentation des routes `/api/subgraphs/` (POST, GET, PUT, DELETE) et des logiques transactionnelles pour l'affectation/désaffectation des nœuds (`assign_nodes`, `unassign_nodes`).
+
+#### **Bloc 4 : Transformation Mermaid (Backend Core)**
+*   **Statut :** Terminé et validé.
+*   **Points Clés :** Le `mermaid_generator.py` produit désormais la syntaxe `subgraph ... end` basée sur la structure DB. Le `mermaid_parser.py` est capable de lire cette syntaxe pour mettre à jour les `subgraph_id` des nœuds lors de l'importation de code, assurant l'AC 4.10.
+
+#### **Bloc 3 : Gestion Frontend des Subgraphs (Dernière Livraison)**
+*   **Statut :** Terminé (Types et Service API).
+*   **Points Clés :**
+    *   **Typage (`frontend/src/types/api.ts`) :** Les interfaces `SubgraphRead`, `SubgraphCreatePayload`, `SubgraphUpdatePayload`, et `NodeAssignmentPayload` sont ajoutées et synchronisées avec Pydantic. Les relations dans `NodeRead` (`subgraph_id`) et `SubProjectRead` (`subgraphs`) sont complétées.
+    *   **Client API (`frontend/src/services/api.ts`) :** Les méthodes pour interagir avec tous les endpoints Subgraph sont implémentées, assurant que le Frontend peut désormais créer, lire, modifier et gérer les associations de nœuds avec le Backend.
+
+### **2. Validation de la Cohérence Architecturelle**
+
+L'approche "Backend Owner" de la logique de graphe est maintenue :
+*   La **source de vérité** pour l'appartenance d'un nœud à un cluster est la base de données (`Node.subgraph_id`).
+*   L'API Backend garantit l'atomité (AC 4.7, 4.9).
+*   Le Frontend est maintenant entièrement typé pour utiliser ces contrats et ne fait qu'initier les commandes d'état via l'API.
+
+### **3. Prochaine Étape Recommandée**
+
+L'infrastructure de communication et le typage sont en place. Le travail doit se concentrer sur la couche de présentation et la gestion d'état :
+
+**Action Prioritaire :** Développement des composants UI (Bloc 3 - Suite) :
+1.  **Sélection UI :** Implémentation de la logique dans le `MermaidViewer` pour permettre la sélection multiple de nœuds (AC 4.2).
+2.  **Modals/Formulaires :** Création du modal de création/édition de Subgraph, qui appellera `apiService.createSubgraph` ou `apiService.updateSubgraph`.
+3.  **Mise à Jour de l'État :** Assurer qu'après toute opération réussie sur un subgraph (création, modification, affectation), l'état global du `SubProject` est rafraîchi pour récupérer la nouvelle `mermaid_definition` et mettre à jour l'affichage.
