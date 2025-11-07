@@ -1,5 +1,5 @@
 # backend/app/services/nodes.py
-# Version 1.2
+# Version 1.3
 
 from typing import List, Optional, Dict, Any
 from werkzeug.exceptions import NotFound, BadRequest
@@ -7,7 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy import update
 
 from app import db
-from app.models import Node, SubProject, Relationship
+from app.models import Node, SubProject, Relationship, ClassDef
 from app.schemas import NodeCreate, RelationshipCreate
 from app.services.mermaid_generator import generate_mermaid_from_subproject
 
@@ -108,6 +108,44 @@ def update_node(node_id: int, data: NodeCreate) -> Node:
     return node
 
 
+def update_node_style(node_id: int, style_name: Optional[str]) -> Node:
+    """
+    Applique ou retire une référence de style (ClassDef) à un nœud.
+    Déclenche la régénération Mermaid (AC 2.7).
+    """
+    node = get_node_by_id(node_id)
+    subproject_id = node.subproject_id # ID du subproject parent
+
+    # 1. Validation du Style (AC 2.5)
+    if style_name is not None:
+        # 1.1. Vérifier si la ClassDef existe dans le SubProject
+        classdef = db.session.execute(
+            db.select(ClassDef).filter_by(subproject_id=subproject_id, name=style_name)
+        ).scalar_one_or_none()
+
+        if classdef is None:
+            raise BadRequest(f"ClassDef with name '{style_name}' not found in SubProject ID {subproject_id}.")
+
+    # 2. Mise à Jour (AC 2.6 si style_name est None)
+    node.style_class_ref = style_name
+
+    try:
+        # 3. Cohérence (AC 2.7) : Régénération Mermaid
+        db.session.flush() # Assure que la modification du nœud est visible
+
+        subproject = db.session.get(SubProject, subproject_id)
+        if subproject:
+            subproject.mermaid_definition = generate_mermaid_from_subproject(subproject_id)
+
+        db.session.commit()
+        db.session.refresh(node)
+    except IntegrityError:
+        db.session.rollback()
+        raise BadRequest("Database integrity error during style update.")
+
+    return node
+
+
 def delete_node(node_id: int) -> bool:
     """Supprime un nœud par ID. Lève 404 si non trouvé."""
     node = get_node_by_id(node_id)
@@ -128,7 +166,7 @@ def import_node_content(subproject_id: int, content_map: Dict[str, str]) -> Dict
     Importe en masse le contenu textuel pour les nœuds d'un subproject.
     Cette opération est transactionnelle et met à jour la définition Mermaid.
 
-    Accepte les clés du content_map soit comme IDs numériques (ex: "1136") 
+    Accepte les clés du content_map soit comme IDs numériques (ex: "1136")
     soit comme mermaid_id (ex: "A001").
     """
     try:

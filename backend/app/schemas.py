@@ -1,5 +1,5 @@
 # backend/app/schemas.py
-# Version 1.1
+# Version 1.2
 
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, ConfigDict, Field
@@ -60,6 +60,10 @@ class NodeRead(NodeBase):
     """Schéma utilisé pour la lecture (réponse API) d'un nœud."""
     id: int
     model_config = ConfigDict(from_attributes=True)
+
+class NodeStyleUpdate(BaseModel):
+    """Schéma pour l'application ou le retrait d'une référence de style."""
+    style_name: Optional[str] = Field(None, description="Nom de la ClassDef à appliquer, ou None pour retirer.")
 
 # --- Définitions de niveau intermédiaire : SubProject ---
 

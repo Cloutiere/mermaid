@@ -1,0 +1,31 @@
+Fichier livré : backend/app/services/mermaid_parser.py
+Prochaine étape :
+C'était le dernier fichier du plan.
+Intégration et Vérification
+Instructions :
+Remplacez les fichiers backend/app/schemas.py, backend/app/services/nodes.py, backend/app/routes/nodes.py, backend/app/services/mermaid_generator.py et backend/app/services/mermaid_parser.py par les nouvelles versions fournies.
+Redémarrez votre serveur Flask pour que les modifications soient prises en compte.
+Vérification :
+Pour valider la nouvelle fonctionnalité, assurez-vous d'avoir un sous-projet avec au moins un nœud et une définition de style (ClassDef).
+Test 1 : Appliquer un style valide
+Action : Envoyez une requête PATCH à /api/nodes/{node_id}/style avec le corps JSON {"style_name": "nom_du_style_existant"}.
+Résultat Attendu : Un statut 200 OK et le corps de la réponse contenant l'objet nœud mis à jour avec "style_class_ref": "nom_du_style_existant". La définition Mermaid du sous-projet parent doit maintenant inclure class {mermaid_id} nom_du_style_existant.
+Test 2 : Appliquer un style invalide
+Action : Envoyez une requête PATCH au même endpoint avec le corps JSON {"style_name": "style_inexistant"}.
+Résultat Attendu : Un statut 400 Bad Request avec un message d'erreur indiquant que la ClassDef n'a pas été trouvée.
+Test 3 : Retirer un style
+Action : Envoyez une requête PATCH au même endpoint avec le corps JSON {"style_name": null}.
+Résultat Attendu : Un statut 200 OK et le corps de la réponse montrant "style_class_ref": null. La ligne class ... correspondante doit avoir disparu de la définition Mermaid du sous-projet.
+Test 4 : Vérification de la persistance (AC 2.9)
+Action : Mettez à jour manuellement la mermaid_definition d'un sous-projet pour y ajouter une application de style (class MonNoeud mon_style). Envoyez ensuite une requête PUT sur le sous-projet (/api/subprojects/{id}) avec ce code modifié.
+Résultat Attendu : Vérifiez que le nœud MonNoeud dans la base de données a maintenant son champ style_class_ref défini à "mon_style". Cela confirme que le mermaid_parser fonctionne correctement.
+Finalisation :
+Dois-je préparer les commandes Git pour commiter ces changements ?
+Résumé technique :
+Fonctionnalité : Implémentation d'un endpoint API PATCH /api/nodes/{id}/style pour appliquer ou retirer dynamiquement des styles (ClassDef) à un nœud.
+Impact Technique :
+Schéma (schemas.py) : Introduction du schéma NodeStyleUpdate pour une validation robuste et ciblée du payload de la requête PATCH.
+Service (services/nodes.py) : Ajout de la fonction update_node_style. Cette fonction est le cœur de la logique métier, garantissant que le style demandé existe bien dans le contexte du sous-projet avant de l'appliquer (AC 2.5). Elle gère aussi le retrait de style (AC 2.6).
+Route (routes/nodes.py) : Exposition de la fonctionnalité via une nouvelle route PATCH sur les nœuds, respectant les conventions REST pour les mises à jour partielles.
+Cohérence des Données (AC 2.7) : L'appel systématique à generate_mermaid_from_subproject après toute modification de style assure que le champ SubProject.mermaid_definition est toujours une représentation fidèle de l'état des entités de la base de données.
+Audit de Persistance (AC 2.9) : La vérification des fichiers mermaid_parser.py et mermaid_generator.py confirme que les mécanismes de transformation sont capables de lire et d'écrire la syntaxe d'application de style, assurant ainsi la persistance de bout en bout.

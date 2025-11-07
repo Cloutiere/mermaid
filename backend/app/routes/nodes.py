@@ -1,5 +1,5 @@
 # backend/app/routes/nodes.py
-# Version 1.1
+# Version 1.2
 
 from flask import Blueprint, jsonify, request
 from http import HTTPStatus
@@ -8,11 +8,11 @@ from http import HTTPStatus
 from app.services.nodes import (
     get_all_nodes, get_node_by_id, create_node, update_node, delete_node,
     get_all_relationships, get_relationship_by_id, create_relationship, update_relationship, delete_relationship,
-    import_node_content
+    import_node_content, update_node_style
 )
 
 # Import Pydantic schemas for validation and serialization
-from app.schemas import NodeCreate, NodeRead, RelationshipCreate, RelationshipRead, NodeContentImport
+from app.schemas import NodeCreate, NodeRead, RelationshipCreate, RelationshipRead, NodeContentImport, NodeStyleUpdate
 
 # Création du Blueprint pour les routes liées aux Nœuds et Relations
 nodes_bp = Blueprint('nodes', __name__)
@@ -89,6 +89,29 @@ def delete_node_route(node_id: int):
 
     # Retourner 204 No Content pour une suppression réussie
     return '', HTTPStatus.NO_CONTENT
+
+@nodes_bp.route('/<int:node_id>/style', methods=['PATCH'])
+def patch_node_style(node_id: int):
+    """
+    Endpoint pour appliquer ou retirer une référence de style à un nœud.
+    """
+    if not request.is_json:
+        return jsonify({"error": "Request must be JSON"}), HTTPStatus.UNSUPPORTED_MEDIA_TYPE
+
+    data = request.get_json()
+    try:
+        # Valider les données entrantes avec le schéma NodeStyleUpdate
+        style_update_schema = NodeStyleUpdate.model_validate(data)
+    except Exception as e:
+        return jsonify({"error": "Validation Error", "details": str(e)}), HTTPStatus.BAD_REQUEST
+
+    # Appeler le service de mise à jour de style
+    updated_node = update_node_style(node_id, style_update_schema.style_name)
+
+    # Sérialiser le nœud mis à jour pour la réponse
+    updated_node_read_schema = NodeRead.model_validate(updated_node).model_dump()
+
+    return jsonify(updated_node_read_schema), HTTPStatus.OK
 
 # --- Route pour l'Importation de Contenu ---
 @nodes_bp.route('/import_content/<int:subproject_id>', methods=['POST'])
