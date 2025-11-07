@@ -1,5 +1,5 @@
 // frontend/src/services/api.ts
-// Version 2.0 (Ajout de ClassDef CRUD et importNodeContent)
+// Version 2.1 (Ajout de patchNodeStyle)
 
 import axios from 'axios'
 import type { AxiosInstance, AxiosResponse } from 'axios'
@@ -9,10 +9,11 @@ import type {
   NodeRead,
   RelationshipRead,
   BackendHealthResponse,
-  SubProjectCreate, // Import nécessaire pour le typage des payloads
+  SubProjectCreate,
   ClassDefRead,
   ClassDefCreate,
   NodeContentImportResponse,
+  NodeStyleUpdatePayload,
 } from '@/types/api'
 
 // Type générique pour les payloads POST/PUT (correspondant aux schémas *Create du backend)
@@ -219,6 +220,14 @@ class ApiService {
     return this.put<NodeRead, typeof data>(`/nodes/${nodeId}`, data)
   }
 
+  /** Applique ou retire un style à un nœud spécifique. */
+  public async patchNodeStyle(
+    nodeId: number,
+    data: NodeStyleUpdatePayload
+  ): Promise<NodeRead> {
+    return this.patch<NodeRead, NodeStyleUpdatePayload>(`/nodes/${nodeId}/style`, data)
+  }
+
   /** Importe du contenu pour des nœuds existants via un dictionnaire. */
   public async importNodeContent(
     subprojectId: number,
@@ -252,23 +261,23 @@ class ApiService {
 
   /** Récupère les définitions de classe. Filtre optionnel par subprojectId. */
   public async getClassDefs(subprojectId?: number): Promise<ClassDefRead[]> {
-    const params = subprojectId ? { subproject_id: subprojectId } : undefined;
-    return this.get<ClassDefRead[]>('/classdefs/', params);
+    const params = subprojectId ? { subproject_id: subprojectId } : undefined
+    return this.get<ClassDefRead[]>('/classdefs/', params)
   }
 
   /** Crée une nouvelle définition de classe. */
   public async createClassDef(data: ClassDefCreate): Promise<ClassDefRead> {
-      return this.post<ClassDefRead, ClassDefCreate>('/classdefs/', data);
+    return this.post<ClassDefRead, ClassDefCreate>('/classdefs/', data)
   }
 
   /** Met à jour une définition de classe. */
   public async updateClassDef(id: number, data: ClassDefCreate): Promise<ClassDefRead> {
-      return this.put<ClassDefRead, ClassDefCreate>(`/classdefs/${id}`, data);
+    return this.put<ClassDefRead, ClassDefCreate>(`/classdefs/${id}`, data)
   }
 
   /** Supprime une définition de classe. */
   public async deleteClassDef(id: number): Promise<void> {
-      return this.delete(`/classdefs/${id}`);
+    return this.delete(`/classdefs/${id}`)
   }
 }
 

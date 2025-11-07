@@ -1,5 +1,5 @@
 // frontend/src/pages/GraphEditorPage.tsx
-// Version 2.2 (Intégration StyleManagerModal)
+// Version 2.3 (Intégration ApplyStyleModal)
 
 import { useParams, useNavigate } from 'react-router-dom'
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
@@ -8,7 +8,8 @@ import type { SubProjectRead, SubProjectCreate } from '@/types/api'
 import MermaidEditor from '@/components/MermaidEditor'
 import MermaidViewer from '@/components/MermaidViewer'
 import ImportContentModal from '@/components/ImportContentModal'
-import StyleManagerModal from '@/components/StyleManagerModal' // NOUVEAU
+import StyleManagerModal from '@/components/StyleManagerModal'
+import ApplyStyleModal from '@/components/ApplyStyleModal' // NOUVEAU
 
 // Fonction utilitaire déplacée à l'extérieur pour ne pas être recréée à chaque rendu
 const normalize = (code: string | null | undefined): string => {
@@ -39,7 +40,8 @@ function GraphEditorPage() {
   const [hasMermaidError, setHasMermaidError] = useState(false)
   const [editorWidthRatio, setEditorWidthRatio] = useState(50) // 50% pour l'éditeur
   const [showJsonImportModal, setShowJsonImportModal] = useState(false)
-  const [showStyleManagerModal, setShowStyleManagerModal] = useState(false) // NOUVEAU
+  const [showStyleManagerModal, setShowStyleManagerModal] = useState(false)
+  const [showApplyStyleModal, setShowApplyStyleModal] = useState(false) // NOUVEAU
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const subprojectIdNumber = subprojectId ? Number(subprojectId) : null
@@ -243,13 +245,17 @@ function GraphEditorPage() {
     refetchSubProject(true) // Silent reload
   }
 
-  // NOUVEAU: Callback for Style Manager
+  // Callback for Style Manager
   const handleStyleChangeSuccess = () => {
     // AC 2.7: Force a reload of the subproject to get the updated mermaid_definition
     // after a style has been created, updated, or deleted.
-    refetchSubProject(true); // Silent reload
-  };
+    refetchSubProject(true) // Silent reload
+  }
 
+  // NOUVEAU: Callback for Apply Style Modal
+  const handleNodeStyleApplySuccess = () => {
+    refetchSubProject(true) // Silent reload pour AC 2.7
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 lg:p-8 flex flex-col">
@@ -318,9 +324,9 @@ function GraphEditorPage() {
         </div>
 
         {/* Action buttons */}
-        <div className="flex justify-end space-x-3">
+        <div className="flex flex-wrap justify-end gap-3">
           <button
-            onClick={() => setShowStyleManagerModal(true)} // NOUVEAU BOUTON STYLE
+            onClick={() => setShowStyleManagerModal(true)}
             disabled={isSaving || isExporting || loading}
             className={`px-4 py-2 rounded-md text-sm font-medium transition border ${
               isSaving || isExporting || loading
@@ -329,6 +335,17 @@ function GraphEditorPage() {
             }`}
           >
             Gérer Styles (ClassDef)
+          </button>
+          <button
+            onClick={() => setShowApplyStyleModal(true)} // NOUVEAU BOUTON
+            disabled={isSaving || isExporting || loading}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition border ${
+              isSaving || isExporting || loading
+                ? 'bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed'
+                : 'bg-white text-teal-600 border-teal-300 hover:bg-teal-50'
+            }`}
+          >
+            Appliquer Style à Nœud
           </button>
           <button
             onClick={() => setShowJsonImportModal(true)}
@@ -377,7 +394,7 @@ function GraphEditorPage() {
         </div>
       </div>
 
-      <main className="flex-grow flex flex-row gap-6 h-[calc(100vh-240px)]">
+      <main className="flex-grow flex flex-row gap-6 h-[calc(100vh-250px)]">
         {editorWidthRatio > 0 && (
           <div className="h-full flex flex-col" style={{ flexBasis: `${editorWidthRatio}%` }}>
             <h2 className="text-lg font-semibold text-gray-700 mb-2">Éditeur Mermaid</h2>
@@ -408,14 +425,24 @@ function GraphEditorPage() {
         />
       )}
 
-      {/* NOUVEAU: Modal de Gestion des Styles */}
+      {/* Modal de Gestion des Styles */}
       {showStyleManagerModal && subproject && (
-          <StyleManagerModal
-              isOpen={showStyleManagerModal}
-              onClose={() => setShowStyleManagerModal(false)}
-              subprojectId={subproject.id}
-              onStyleChange={handleStyleChangeSuccess}
-          />
+        <StyleManagerModal
+          isOpen={showStyleManagerModal}
+          onClose={() => setShowStyleManagerModal(false)}
+          subprojectId={subproject.id}
+          onStyleChange={handleStyleChangeSuccess}
+        />
+      )}
+
+      {/* NOUVEAU: Modal d'Application de Style */}
+      {showApplyStyleModal && subproject && (
+        <ApplyStyleModal
+          isOpen={showApplyStyleModal}
+          onClose={() => setShowApplyStyleModal(false)}
+          subprojectId={subproject.id}
+          onApplySuccess={handleNodeStyleApplySuccess}
+        />
       )}
     </div>
   )

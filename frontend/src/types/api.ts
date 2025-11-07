@@ -1,5 +1,5 @@
 // frontend/src/types/api.ts
-// Version 2.0 (Ajout ClassDefCreate et NodeContentImportResponse)
+// Version 2.1 (Ajout NodeStyleUpdatePayload)
 
 // Type pour le health check
 export interface BackendHealthResponse {
@@ -62,6 +62,11 @@ export type NodeCreate = Omit<NodeRead, 'id'>
 export type RelationshipCreate = Omit<RelationshipRead, 'id'>
 export type ClassDefCreate = Omit<ClassDefRead, 'id'>
 
+// Type pour la mise à jour de style d'un noeud
+export interface NodeStyleUpdatePayload {
+  style_name: string | null;
+}
+
 // Type pour l'import Mermaid
 export interface MermaidImportRequest {
   code: string
@@ -80,6 +85,6 @@ export interface MermaidImportResponse {
 
 // Type pour l'import de contenu de nœuds
 export interface NodeContentImportResponse {
-    updated_count: number;
-    ignored_ids: string[];
+  updated_count: number
+  ignored_ids: string[]
 }

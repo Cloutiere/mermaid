@@ -594,3 +594,92 @@ Cette implémentation adresse directement plusieurs points critiques du DDA V2.0
 #### 4. Conclusion
 
 L'API backend est désormais équipée pour gérer le cycle de vie complet de l'application des styles sur les nœuds. Cette étape débloque le développement de l'interface utilisateur correspondante. L'équipe frontend peut maintenant s'appuyer sur cet endpoint pour permettre aux utilisateurs de styliser leurs graphes de manière interactive.
+
+
+# Mémo Technique Synthétique : Validation de l'Implémentation DDA V2.0 (FNS 1, FNS 2, FNS 3)
+
+**À :** Chef de Projet
+**De :** Architecte Logiciel Sénior
+**Date :** [Date du jour]
+**Objet :** Rapport de finalisation des composants critiques et de l'intégration des fonctionnalités majeures de la V2.0.
+
+---
+
+## I. Résumé Exécutif de la V2.0
+
+L'implémentation des trois initiatives structurantes (FNS 1, FNS 2, FNS 3) issues du DDA V2.0 est largement terminée. L'architecture de séparation des responsabilités (Structure vs Métadonnées/Contenu) a été renforcée, garantissant la stabilité des IDs de nœuds lors des mises à jour de contenu. Les fonctionnalités de gestion des styles (`ClassDef`) sont désormais opérationnelles en CRUD côté API et accessibles via des outils dédiés côté Frontend.
+
+Le développement s'est concentré sur la robustesse transactionnelle et la synchronisation de l'artefact dérivé (`SubProject.mermaid_definition`).
+
+---
+
+## II. Mise en Œuvre des Initiatives Fonctionnelles
+
+### A. FNS 1 : Importation de Contenu en Masse (Texte Narratif)
+
+La fonctionnalité d'importation JSON a été implémentée en respectant les exigences de robustesse et de rapport d'erreurs.
+
+| Composant | Point Clé de l'Implémentation | Référence Fichier |
+| :--- | :--- | :--- |
+| **Service Backend** | Implémentation de `import_node_content`. Opération atomique via transaction unique. Gère la recherche par `Node.id` (numérique) OU `Node.mermaid_id` (alphanumérique). | `backend/app/services/nodes.py` |
+| **API Backend** | Route `POST /api/nodes/import_content/{id}` validée par Pydantic (`NodeContentImport`). Retourne le compte des mises à jour et les IDs ignorés (AC 1.7). | `backend/app/routes/nodes.py` |
+| **Cohérence** | Appel automatique à la régénération Mermaid après la mise à jour des champs `text_content` (AC 2.7). | `backend/app/services/nodes.py` |
+| **Frontend (UX)** | Ajout du `ImportContentModal` et intégration dans `GraphEditorPage.tsx` pour déclencher le processus silencieusement. | `frontend/src/pages/GraphEditorPage.tsx` |
+
+### B. FNS 2 : Gestion des Styles (ClassDef CRUD et Cohérence Bidirectionnelle)
+
+C'est le pilier le plus critique qui a nécessité des modifications structurelles et fonctionnelles profondes.
+
+#### 1. Prérequis de Base de Données (Migration)
+Pour permettre la persistance de l'orientation du graphe (correction AC 2.9), la migration de base de données suivante a été exécutée :
+*   Ajout de la colonne `graph_direction` à la table `subproject` avec `NOT NULL DEFAULT 'TD'`.
+
+#### 2. Stabilité Structurelle et Persistance des IDs
+Pour s'assurer que les IDs des nœuds ne changent pas après une simple mise à jour de contenu narratif (débloquant FNS 1), la logique de sauvegarde a été divisée :
+*   **Sauvegarde Structurelle (PUT) :** Déclenchée uniquement si `mermaid_definition` a changé. Conduit à la reconstruction complète des nœuds.
+*   **Sauvegarde Métadonnées (PATCH) :** Déclenchée si seul le titre ou le layout change. **Préserve tous les IDs de nœuds et leurs contenus** (y compris `text_content` et `style_class_ref`).
+
+| Composant | Point Clé de l'Implémentation | Référence Fichier |
+| :--- | :--- | :--- |
+| **Backend** | Implémentation de `PATCH /api/subprojects/<id>/metadata` (préserve les nœuds). | `backend/app/routes/subprojects.py` |
+| **Frontend** | Logique de détection dans `GraphEditorPage.tsx` pour choisir entre PUT et PATCH. | `frontend/src/pages/GraphEditorPage.tsx` |
+
+#### 3. CRUD de la Définition de Style (`ClassDef`)
+Le CRUD complet pour gérer les styles a été implémenté côté backend et exposé via l'API.
+
+*   **Services :** Implémentation du CRUD dans `classdefs.py`. La suppression (AC 2.4) inclut la mise à `NULL` en masse des références `Node.style_class_ref` correspondantes.
+*   **Synchronisation (AC 2.7) :** Toute modification de `ClassDef` (CRUD) déclenche la régénération de `SubProject.mermaid_definition`.
+*   **Frontend :** Le `StyleManagerModal.tsx` fournit l'interface pour ces opérations.
+
+#### 4. Application de Style Ciblée (AC 2.5 & 2.6)
+Une fonctionnalité fine de stylisation directe des nœuds a été ajoutée.
+
+*   **API PATCH :** Endpoint `PATCH /api/nodes/<id>/style` validé (AC 2.5 : vérifie l'existence du style dans le sous-projet). Met à jour `Node.style_class_ref` ou le met à `NULL` (AC 2.6).
+*   **Régénération (AC 2.7) :** Le service appelle `generate_mermaid_from_subproject` après chaque succès pour refléter immédiatement le changement dans la définition stockée.
+*   **UX :** Intégration de `ApplyStyleModal.tsx` permettant la sélection du nœud et du style, avec des améliorations ergonomiques (tri, filtrage, affichage clair du style actuel).
+
+### C. FNS 3 : Améliorations UX (Layout Flexible)
+
+L'ergonomie de l'éditeur a été grandement améliorée pour gérer la complexité des grands graphes.
+
+| Composant | Point Clé de l'Implémentation | Référence Fichier |
+| :--- | :--- | :--- |
+| **Layout Dynamique** | Introduction de l'état `editorWidthRatio` et utilisation de `flexBasis` pour redimensionner dynamiquement l'éditeur et le visualiseur. | `frontend/src/pages/GraphEditorPage.tsx` |
+| **Contrôles** | Ajout d'un sélecteur d'affichage dans l'en-tête permettant des ratios 0%, 25%, 50%, 75%, 100%. | `frontend/src/pages/GraphEditorPage.tsx` |
+| **Zoom/Pan** | (Note : Bien que mentionné dans le DDA, l'intégration des librairies tierces pour le Zoom/Pan SVG n'a pas été abordée dans cette série de commits, mais le layout flexible rend le travail du visualiseur plus gérable.) | N/A |
+
+---
+
+## III. Synthèse et Prochaines Étapes
+
+L'architecture est désormais stable concernant la persistance et la synchronisation des entités de graphe (Nœuds, Relations, Styles).
+
+**Points de Vigilance Adressés :**
+*   **Cohérence bidirectionnelle (AC 2.9) :** Bien que les services de modification gèrent désormais l'écriture des styles et des contenus, la validation complète des nouvelles syntaxes de *lecture* (`mermaid_parser.py`) et de *génération* (`mermaid_generator.py`) pour les styles et la direction du graphe doit être menée en priorité lors de la prochaine phase de recette pour garantir qu'un fichier Mermaid brut importé sera parsé correctement dans le nouveau modèle.
+
+**Prochaines Étapes Recommandées :**
+1.  **Validation du Parser/Generator (AC 2.9) :** Tester l'importation/exportation de graphes contenant des styles et des changements de direction (`graph TD/LR`).
+2.  **Finalisation des Améliorations UX (FNS 3) :** Intégration de la librairie de Zoom/Pan pour le `MermaidViewer.tsx`.
+3.  **Intégration Frontend des CRUD Styles :** (Ceci est en cours de finalisation avec les derniers commits Frontend).
+
+Le socle technique est prêt à supporter les prochaines itérations de développement.
