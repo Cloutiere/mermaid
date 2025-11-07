@@ -1,5 +1,5 @@
 // frontend/src/services/api.ts
-// Version 2.1 (Ajout de patchNodeStyle)
+// Version 3.0 (Ajout des méthodes pour les Subgraphs)
 
 import axios from 'axios'
 import type { AxiosInstance, AxiosResponse } from 'axios'
@@ -14,6 +14,10 @@ import type {
   ClassDefCreate,
   NodeContentImportResponse,
   NodeStyleUpdatePayload,
+  SubgraphRead,
+  SubgraphCreatePayload,
+  SubgraphUpdatePayload,
+  NodeAssignmentPayload,
 } from '@/types/api'
 
 // Type générique pour les payloads POST/PUT (correspondant aux schémas *Create du backend)
@@ -278,6 +282,52 @@ class ApiService {
   /** Supprime une définition de classe. */
   public async deleteClassDef(id: number): Promise<void> {
     return this.delete(`/classdefs/${id}`)
+  }
+
+  // -- Subgraphs --
+
+  /** Récupère un subgraph par son ID. */
+  public async getSubgraph(subgraphId: number): Promise<SubgraphRead> {
+    return this.get<SubgraphRead>(`/subgraphs/${subgraphId}`)
+  }
+
+  /** Crée un nouveau subgraph et lui assigne des nœuds. */
+  public async createSubgraph(data: SubgraphCreatePayload): Promise<SubgraphRead> {
+    return this.post<SubgraphRead, SubgraphCreatePayload>('/subgraphs/', data)
+  }
+
+  /** Met à jour les métadonnées (titre, style) d'un subgraph. */
+  public async updateSubgraph(
+    subgraphId: number,
+    data: SubgraphUpdatePayload
+  ): Promise<SubgraphRead> {
+    return this.put<SubgraphRead, SubgraphUpdatePayload>(`/subgraphs/${subgraphId}`, data)
+  }
+
+  /** Supprime un subgraph et désassigne ses nœuds. */
+  public async deleteSubgraph(subgraphId: number): Promise<void> {
+    return this.delete(`/subgraphs/${subgraphId}`)
+  }
+
+  /** Assigne une liste de nœuds à un subgraph. */
+  public async assignNodesToSubgraph(subgraphId: number, nodeIds: number[]): Promise<SubgraphRead> {
+    const payload: NodeAssignmentPayload = { node_ids: nodeIds }
+    return this.patch<SubgraphRead, NodeAssignmentPayload>(
+      `/subgraphs/${subgraphId}/assign_nodes`,
+      payload
+    )
+  }
+
+  /** Retire (désassigne) une liste de nœuds d'un subgraph. */
+  public async unassignNodesFromSubgraph(
+    subgraphId: number,
+    nodeIds: number[]
+  ): Promise<SubgraphRead> {
+    const payload: NodeAssignmentPayload = { node_ids: nodeIds }
+    return this.patch<SubgraphRead, NodeAssignmentPayload>(
+      `/subgraphs/${subgraphId}/unassign_nodes`,
+      payload
+    )
   }
 }
 

@@ -1,5 +1,5 @@
 // frontend/src/types/api.ts
-// Version 2.1 (Ajout NodeStyleUpdatePayload)
+// Version 3.0 (Ajout des types pour les Subgraphs)
 
 // Type pour le health check
 export interface BackendHealthResponse {
@@ -14,7 +14,9 @@ export interface ProjectRead {
   subprojects: SubProjectRead[]
 }
 
-// Type pour SubProject
+// --- Types de Graphes et Composants ---
+
+// Type pour SubProject (Graphe)
 export interface SubProjectRead {
   id: number
   project_id: number
@@ -24,6 +26,7 @@ export interface SubProjectRead {
   nodes?: NodeRead[]
   relationships?: RelationshipRead[]
   class_defs?: ClassDefRead[]
+  subgraphs?: SubgraphRead[] // AJOUT
 }
 
 // Type pour Node
@@ -34,9 +37,10 @@ export interface NodeRead {
   title?: string | null
   text_content: string
   style_class_ref?: string | null
+  subgraph_id?: number | null // AJOUT
 }
 
-// Type pour Relationship
+// Type pour Relationship (Lien)
 export interface RelationshipRead {
   id: number
   subproject_id: number
@@ -47,7 +51,7 @@ export interface RelationshipRead {
   link_type: 'VISIBLE' | 'INVISIBLE'
 }
 
-// Type pour ClassDef
+// Type pour ClassDef (Style)
 export interface ClassDefRead {
   id: number
   subproject_id: number
@@ -55,19 +59,54 @@ export interface ClassDefRead {
   definition_raw: string
 }
 
-// Types pour les payloads de création (sans id)
+// Type pour Subgraph (Cluster)
+export interface SubgraphRead {
+  id: number
+  subproject_id: number
+  mermaid_id: string
+  title: string
+  style_class_ref?: string | null
+  nodes: NodeRead[] // Liste des nœuds contenus
+}
+
+// --- Types pour les Payloads de Création (Schemas *Create) ---
+
 export type ProjectCreate = Omit<ProjectRead, 'id' | 'subprojects'>
-export type SubProjectCreate = Omit<SubProjectRead, 'id' | 'nodes' | 'relationships' | 'class_defs'>
+export type SubProjectCreate = Omit<
+  SubProjectRead,
+  'id' | 'nodes' | 'relationships' | 'class_defs' | 'subgraphs'
+>
 export type NodeCreate = Omit<NodeRead, 'id'>
 export type RelationshipCreate = Omit<RelationshipRead, 'id'>
 export type ClassDefCreate = Omit<ClassDefRead, 'id'>
 
-// Type pour la mise à jour de style d'un noeud
+// --- Types pour les Payloads de Mise à Jour & Actions Spécifiques ---
+
+// Pour la mise à jour de style d'un noeud
 export interface NodeStyleUpdatePayload {
-  style_name: string | null;
+  style_name: string | null
 }
 
-// Type pour l'import Mermaid
+// Payloads pour les Subgraphs
+export interface SubgraphCreatePayload {
+  subproject_id: number
+  title: string
+  style_class_ref?: string | null
+  node_ids: number[] // IDs des nœuds à affecter immédiatement
+}
+
+export interface SubgraphUpdatePayload {
+  title: string
+  style_class_ref?: string | null
+}
+
+export interface NodeAssignmentPayload {
+  node_ids: number[]
+}
+
+// --- Types pour l'Import/Export ---
+
+// Pour l'import Mermaid
 export interface MermaidImportRequest {
   code: string
   project_title?: string
@@ -83,7 +122,7 @@ export interface MermaidImportResponse {
   }[]
 }
 
-// Type pour l'import de contenu de nœuds
+// Pour l'import de contenu de nœuds
 export interface NodeContentImportResponse {
   updated_count: number
   ignored_ids: string[]
