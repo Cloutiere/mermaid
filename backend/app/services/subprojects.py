@@ -7,7 +7,7 @@ from werkzeug.exceptions import NotFound, BadRequest
 
 from app import db
 from app.models import SubProject, Project
-from app.schemas import SubProjectCreate
+from app.schemas import SubProjectCreate, SubProjectMetadataUpdate
 from app.services.mermaid_parser import synchronize_subproject_entities
 
 def _get_project_or_404(project_id: int) -> Project:
@@ -77,31 +77,55 @@ def create_subproject(subproject_data: SubProjectCreate) -> SubProject:
     db.session.refresh(new_subproject)
     return get_subproject_by_id(new_subproject.id)
 
-def update_subproject(subproject_id: int, subproject_data: SubProjectCreate) -> SubProject:
-    """Met à jour un sous-projet existant et synchronise ses entités structurelles."""
+def update_subproject_structure(subproject_id: int, data: SubProjectCreate) -> SubProject:
+    """Met à jour UNIQUEMENT la structure Mermaid (recrée les nœuds/relations)."""
     subproject = get_subproject_by_id(subproject_id)
-
-    if subproject.title != subproject_data.title:
+    
+    # Vérifier l'unicité du titre si changé
+    if subproject.title != data.title:
         existing_subproject = db.session.execute(
             db.select(SubProject).filter(
                 SubProject.id != subproject_id,
                 SubProject.project_id == subproject.project_id,
-                SubProject.title == subproject_data.title
+                SubProject.title == data.title
             )
         ).scalar_one_or_none()
         if existing_subproject:
-            raise BadRequest(f"A subproject with title '{subproject_data.title}' already exists in this project.")
-
-    subproject.title = subproject_data.title
-    subproject.mermaid_definition = subproject_data.mermaid_definition
-    subproject.visual_layout = subproject_data.visual_layout
+            raise BadRequest(f"A subproject with title '{data.title}' already exists in this project.")
+    
+    subproject.title = data.title
+    subproject.mermaid_definition = data.mermaid_definition
+    subproject.visual_layout = data.visual_layout
 
     try:
         synchronize_subproject_entities(subproject, subproject.mermaid_definition)
     except Exception as e:
         db.session.rollback()
-        raise BadRequest(f"Failed to parse and synchronize Mermaid definition on update: {e}")
+        raise BadRequest(f"Failed to synchronize Mermaid structure: {e}")
 
+    db.session.commit()
+    return get_subproject_by_id(subproject_id)
+
+
+def update_subproject_metadata(subproject_id: int, data: SubProjectMetadataUpdate) -> SubProject:
+    """Met à jour UNIQUEMENT les métadonnées (title + layout) sans toucher aux nœuds."""
+    subproject = get_subproject_by_id(subproject_id)
+    
+    # Vérifier l'unicité du titre si changé
+    if subproject.title != data.title:
+        existing_subproject = db.session.execute(
+            db.select(SubProject).filter(
+                SubProject.id != subproject_id,
+                SubProject.project_id == subproject.project_id,
+                SubProject.title == data.title
+            )
+        ).scalar_one_or_none()
+        if existing_subproject:
+            raise BadRequest(f"A subproject with title '{data.title}' already exists in this project.")
+    
+    subproject.title = data.title
+    subproject.visual_layout = data.visual_layout
+    
     db.session.commit()
     return get_subproject_by_id(subproject_id)
 

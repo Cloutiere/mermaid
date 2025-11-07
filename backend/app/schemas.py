@@ -110,3 +110,10 @@ class NodeContentImport(BaseModel):
     """Schéma pour l'importation en masse du contenu textuel des nœuds."""
     # Représente le JSON de la requête: { "MERMAID_ID": "Contenu Textuel", ... }
     content_map: Dict[str, str] = Field(..., description="Map des mermaid_id aux nouveaux text_content.")
+
+# --- Schéma pour la mise à jour partielle des métadonnées SubProject ---
+
+class SubProjectMetadataUpdate(BaseModel):
+    """Schéma pour la mise à jour partielle (title + visual_layout) sans toucher à la structure."""
+    title: str = Field(..., max_length=255)
+    visual_layout: Optional[Dict[str, Any]] = None

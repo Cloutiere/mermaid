@@ -140,15 +140,29 @@ function GraphEditorPage() {
     setIsSaving(true)
     setError(null)
 
-    const payload: SubProjectCreate = {
-      project_id: subproject.project_id,
-      title: subproject.title,
-      mermaid_definition: currentMermaidCode,
-      visual_layout: subproject.visual_layout || null,
-    }
-
     try {
-      const updatedData = await apiService.updateSubProject(subproject.id, payload)
+      // Détecter si la définition Mermaid a changé
+      const mermaidChanged = normalize(currentMermaidCode) !== normalize(subproject.mermaid_definition)
+
+      let updatedData: SubProjectRead
+
+      if (mermaidChanged) {
+        // Si le code Mermaid a changé, reconstruire la structure (recrée les nœuds)
+        const payload: SubProjectCreate = {
+          project_id: subproject.project_id,
+          title: subproject.title,
+          mermaid_definition: currentMermaidCode,
+          visual_layout: subproject.visual_layout || null,
+        }
+        updatedData = await apiService.updateSubProjectStructure(subproject.id, payload)
+      } else {
+        // Sinon, mettre à jour uniquement les métadonnées (garde les nœuds intacts)
+        updatedData = await apiService.patchSubProjectMetadata(subproject.id, {
+          title: subproject.title,
+          visual_layout: subproject.visual_layout || null,
+        })
+      }
+
       setSubProject(updatedData)
       setCurrentMermaidCode(updatedData.mermaid_definition)
       console.log('Sauvegarde réussie!', updatedData)

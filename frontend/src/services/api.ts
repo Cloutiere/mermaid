@@ -99,6 +99,15 @@ class ApiService {
     }
   }
 
+  public async patch<T, P extends Payload>(path: string, data: P): Promise<T> {
+    try {
+      const response: AxiosResponse<T> = await this.api.patch(path, data)
+      return response.data
+    } catch (error) {
+      throw this.handleError(error)
+    }
+  }
+
   // --- Méthodes Spécifiques par Entité ---
 
   // -- Health --
@@ -154,8 +163,21 @@ class ApiService {
     return this.post<SubProjectRead, typeof data>('/subprojects/', data)
   }
 
-  /** Met à jour un subproject existant. */
+  /** Met à jour un subproject existant (détection automatique structure vs métadonnées). */
   public async updateSubProject(id: number, data: SubProjectCreate): Promise<SubProjectRead> {
+    return this.put<SubProjectRead, typeof data>(`/subprojects/${id}`, data)
+  }
+
+  /** Met à jour UNIQUEMENT les métadonnées (title + visual_layout) sans toucher à la structure. */
+  public async patchSubProjectMetadata(
+    id: number,
+    data: { title: string; visual_layout?: any }
+  ): Promise<SubProjectRead> {
+    return this.patch<SubProjectRead, typeof data>(`/subprojects/${id}/metadata`, data)
+  }
+
+  /** Met à jour la structure Mermaid complète (reconstruction des entités). */
+  public async updateSubProjectStructure(id: number, data: SubProjectCreate): Promise<SubProjectRead> {
     return this.put<SubProjectRead, typeof data>(`/subprojects/${id}`, data)
   }
 
