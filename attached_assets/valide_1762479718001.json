@@ -1,0 +1,4 @@
+{
+        "1136": "Ce premier paragraphe contient l'intégralité du texte descriptif pour le nœud A. Il peut être long et détaillé, car il est destiné à remplacer le contenu textuel de ce nœud spécifique dans le graphe.",
+        "1137": "Voici le second paragraphe, un peu plus court, pour le nœud B. L'API backend lira cette structure clé-valeur et mettra à jour les champs text_content correspondants dans la base de données, puis régénèrera le Mermaid."
+}
