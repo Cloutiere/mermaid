@@ -1,5 +1,5 @@
 // frontend/src/pages/GraphEditorPage.tsx
-// Version 2.3 (Intégration ApplyStyleModal)
+// Version 2.4 (Intégration SubgraphManagerModal)
 
 import { useParams, useNavigate } from 'react-router-dom'
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
@@ -9,7 +9,8 @@ import MermaidEditor from '@/components/MermaidEditor'
 import MermaidViewer from '@/components/MermaidViewer'
 import ImportContentModal from '@/components/ImportContentModal'
 import StyleManagerModal from '@/components/StyleManagerModal'
-import ApplyStyleModal from '@/components/ApplyStyleModal' // NOUVEAU
+import ApplyStyleModal from '@/components/ApplyStyleModal'
+import SubgraphManagerModal from '@/components/SubgraphManagerModal' // NOUVEAU
 
 // Fonction utilitaire déplacée à l'extérieur pour ne pas être recréée à chaque rendu
 const normalize = (code: string | null | undefined): string => {
@@ -41,7 +42,8 @@ function GraphEditorPage() {
   const [editorWidthRatio, setEditorWidthRatio] = useState(50) // 50% pour l'éditeur
   const [showJsonImportModal, setShowJsonImportModal] = useState(false)
   const [showStyleManagerModal, setShowStyleManagerModal] = useState(false)
-  const [showApplyStyleModal, setShowApplyStyleModal] = useState(false) // NOUVEAU
+  const [showApplyStyleModal, setShowApplyStyleModal] = useState(false)
+  const [showSubgraphManagerModal, setShowSubgraphManagerModal] = useState(false) // NOUVEAU
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const subprojectIdNumber = subprojectId ? Number(subprojectId) : null
@@ -134,7 +136,7 @@ function GraphEditorPage() {
     { label: '25/75', ratio: 25 },
     { label: '50/50', ratio: 50 },
     { label: '75/25', ratio: 75 },
-    { label: 'Éditeur', ratio: 100 },
+    { label: 'Éditeur', ratio: 100 }
   ]
 
   // --- 5. Handlers d'Action ---
@@ -156,14 +158,14 @@ function GraphEditorPage() {
           project_id: subproject.project_id,
           title: subproject.title,
           mermaid_definition: currentMermaidCode,
-          visual_layout: subproject.visual_layout || null,
+          visual_layout: subproject.visual_layout || null
         }
         updatedData = await apiService.updateSubProjectStructure(subproject.id, payload)
       } else {
         // Sinon, mettre à jour uniquement les métadonnées (garde les nœuds intacts)
         updatedData = await apiService.patchSubProjectMetadata(subproject.id, {
           title: subproject.title,
-          visual_layout: subproject.visual_layout || null,
+          visual_layout: subproject.visual_layout || null
         })
       }
 
@@ -252,9 +254,14 @@ function GraphEditorPage() {
     refetchSubProject(true) // Silent reload
   }
 
-  // NOUVEAU: Callback for Apply Style Modal
+  // Callback for Apply Style Modal
   const handleNodeStyleApplySuccess = () => {
     refetchSubProject(true) // Silent reload pour AC 2.7
+  }
+
+  // NOUVEAU: Callback for Subgraph Manager Modal
+  const handleSubgraphUpdateSuccess = () => {
+    refetchSubProject(true) // Silent reload pour AC 4.10
   }
 
   return (
@@ -326,6 +333,17 @@ function GraphEditorPage() {
         {/* Action buttons */}
         <div className="flex flex-wrap justify-end gap-3">
           <button
+            onClick={() => setShowSubgraphManagerModal(true)} // NOUVEAU BOUTON
+            disabled={isSaving || isExporting || loading}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition border ${
+              isSaving || isExporting || loading
+                ? 'bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed'
+                : 'bg-white text-blue-600 border-blue-300 hover:bg-blue-50'
+            }`}
+          >
+            Gérer Subgraphs
+          </button>
+          <button
             onClick={() => setShowStyleManagerModal(true)}
             disabled={isSaving || isExporting || loading}
             className={`px-4 py-2 rounded-md text-sm font-medium transition border ${
@@ -337,7 +355,7 @@ function GraphEditorPage() {
             Gérer Styles (ClassDef)
           </button>
           <button
-            onClick={() => setShowApplyStyleModal(true)} // NOUVEAU BOUTON
+            onClick={() => setShowApplyStyleModal(true)}
             disabled={isSaving || isExporting || loading}
             className={`px-4 py-2 rounded-md text-sm font-medium transition border ${
               isSaving || isExporting || loading
@@ -435,13 +453,23 @@ function GraphEditorPage() {
         />
       )}
 
-      {/* NOUVEAU: Modal d'Application de Style */}
+      {/* Modal d'Application de Style */}
       {showApplyStyleModal && subproject && (
         <ApplyStyleModal
           isOpen={showApplyStyleModal}
           onClose={() => setShowApplyStyleModal(false)}
           subprojectId={subproject.id}
           onApplySuccess={handleNodeStyleApplySuccess}
+        />
+      )}
+
+      {/* NOUVEAU: Modal de Gestion des Subgraphs */}
+      {showSubgraphManagerModal && subproject && (
+        <SubgraphManagerModal
+          isOpen={showSubgraphManagerModal}
+          onClose={() => setShowSubgraphManagerModal(false)}
+          subprojectId={subproject.id}
+          onUpdateSuccess={handleSubgraphUpdateSuccess}
         />
       )}
     </div>

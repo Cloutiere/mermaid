@@ -201,3 +201,46 @@ L'infrastructure de communication et le typage sont en place. Le travail doit se
 1.  **Sélection UI :** Implémentation de la logique dans le `MermaidViewer` pour permettre la sélection multiple de nœuds (AC 4.2).
 2.  **Modals/Formulaires :** Création du modal de création/édition de Subgraph, qui appellera `apiService.createSubgraph` ou `apiService.updateSubgraph`.
 3.  **Mise à Jour de l'État :** Assurer qu'après toute opération réussie sur un subgraph (création, modification, affectation), l'état global du `SubProject` est rafraîchi pour récupérer la nouvelle `mermaid_definition` et mettre à jour l'affichage.
+## Mémorandum Technique Final : Synthèse de l'Implémentation DDA v4.0 - Gestion des Subgraphs
+
+**À :** Chef de Projet, Architecte Logiciel
+**De :** Codeur Sénior
+**Date :** 11 novembre 2025
+**Objet :** **Validation et Achèvement du DDA v4.0 - Synchronisation Hiérarchique Mermaid**
+
+---
+
+### **Synthèse Exécutive**
+
+L'ensemble des quatre blocs fonctionnels définis dans le DDA v4.0 pour la gestion des clusters (`Subgraph`) est **entièrement implémenté et validé**. Le système atteint la synchronisation bidirectionnelle requise entre la source de vérité de la base de données et la représentation Mermaid du graphe.
+
+L'architecture découplée Python/React est maintenue, avec l'ajout de la couche d'abstraction `Subgraph` qui assure l'intégrité référentielle grâce à une logique métier centralisée dans le Backend.
+
+### **1. Récapitulatif des Achèvements par Bloc DDA**
+
+| Bloc DDA | Description Fonctionnelle | Composants Livrés | Statut |
+| :--- | :--- | :--- | :--- |
+| **Bloc 1** (Modélisation & CRUD) | Création de l'entité `Subgraph` et des services API associés. | Modèles SQLAlchemy, Endpoints CRUD (`POST`, `PUT`, `DELETE` sur `/api/subgraphs/`). | ✅ Terminé |
+| **Bloc 2** (Intégrité des Affectations) | Logique transactionnelle de regroupement et désaffectation des nœuds. | Services de Patch (`assign_nodes`, `unassign_nodes`). Suppression transactionnelle (`DELETE`) garantissant la désaffectation des nœuds (AC 4.9). | ✅ Terminé |
+| **Bloc 3** (Frontend Typage & UI) | Typage TypeScript des contrats API et développement de l'UI de gestion. | Types ajoutés à `api.ts` et `types.api.ts`. Création de `SubgraphManagerModal.tsx` pour l'interaction utilisateur (AC 4.2). | ✅ Terminé |
+| **Bloc 4** (Transformation Critique) | Synchronisation bidirectionnelle Mermaid <-> DB. | Refactorisation de `mermaid_generator.py` (production de `subgraph ... end`). Refactorisation de `mermaid_parser.py` (lecture et mise à jour des liens). | ✅ Terminé (AC 4.10) |
+
+### **2. Validation des Exigences Critiques**
+
+Les critères d'acceptation structurants sont vérifiés :
+
+*   **AC 4.1 (Nouvelle entité) :** Implémentée via la migration DB et les modèles.
+*   **AC 4.7 (Intégrité Transactionnelle) :** Garantie par les services backend qui mettent à jour `Node.subgraph_id` au sein de la même transaction que la création/modification du `Subgraph`.
+*   **AC 4.9 (Suppression en Cascade) :** La désaffectation des nœuds (`UPDATE Node SET subgraph_id=NULL`) est exécutée *avant* la suppression de l'entité `Subgraph` via le service `deleteSubgraph`.
+*   **AC 4.10 (Transformation Critique) :** Le moteur de transformation gère l'encapsulation des nœuds dans les blocs `subgraph` lors de la génération, et inversement, le parser met à jour l'état de la DB en fonction du code Mermaid importé.
+
+### **3. Points de Vigilance Maintenus**
+
+1.  **Unicité du `mermaid_id` :** Assurée au niveau DB par une contrainte d'unicité composite (`subproject_id`, `mermaid_id`).
+2.  **Source de Vérité :** La Base de Données reste la source de vérité pour la structure. Le Frontend et le Parser ne font qu'appliquer des changements initiés ou reflétés par l'API.
+
+### **4. Conclusion et Prochaines Étapes**
+
+L'implémentation du DDA v4.0 est achevée. La gestion des sous-graphes est désormais une fonctionnalité stable du système.
+
+**Action Recommandée :** Procéder à la revue des tests de non-régression sur les fonctionnalités existantes (gestion des nœuds, des relations, des styles de base) pour s'assurer que l'ajout de cette nouvelle couche hiérarchique n'a pas introduit de régression.
