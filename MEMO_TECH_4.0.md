@@ -150,3 +150,4 @@ Les tests de vérification ont confirmé que l'implémentation respecte rigoureu
 La promesse de **cohérence bidirectionnelle** est désormais pleinement réalisée pour la structure hiérarchique des graphes. Les utilisateurs peuvent importer et éditer du code Mermaid complexe en toute confiance, sachant que la structure de données sous-jacente reflétera fidèlement leurs intentions visuelles.
 
 Le backend est maintenant complet sur l'ensemble du cycle de vie des `Subgraph`, couvrant la création via API (Bloc 1), la liaison (Bloc 2) et la synchronisation depuis le code (Bloc 4).
+
