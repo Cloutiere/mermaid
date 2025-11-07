@@ -1,5 +1,5 @@
 # backend/app/models.py
-# Version 1.1
+# Version 1.2
 """
 Modèles de données pour l'éditeur visuel de structure narrative Mermaid.
 Utilise SQLAlchemy 2.0 avec typage moderne pour la compatibilité avec Flask-Migrate.
@@ -53,6 +53,26 @@ class SubProject(db.Model):
     nodes: Mapped[List["Node"]] = relationship(back_populates="subproject", cascade="all, delete-orphan")
     relationships: Mapped[List["Relationship"]] = relationship(back_populates="subproject", cascade="all, delete-orphan")
     class_defs: Mapped[List["ClassDef"]] = relationship(back_populates="subproject", cascade="all, delete-orphan")
+    subgraphs: Mapped[List["Subgraph"]] = relationship(back_populates="subproject", cascade="all, delete-orphan")
+
+
+# --- NOUVEAU : Modèle Subgraph (Conteneur de Nœuds) ---
+class Subgraph(db.Model):
+    """
+    Représente un conteneur logique (cluster) de nœuds dans un subproject.
+    """
+    __tablename__ = 'subgraph'
+    __table_args__ = (UniqueConstraint('subproject_id', 'mermaid_id', name='uq_subproject_subgraph_mermaid_id'),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    subproject_id: Mapped[int] = mapped_column(ForeignKey('subproject.id'), nullable=False, index=True) # CORRIGÉ ICI
+    mermaid_id: Mapped[str] = mapped_column(String(50), nullable=False)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    style_class_ref: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+
+    # Relations
+    subproject: Mapped["SubProject"] = relationship(back_populates="subgraphs")
+    nodes: Mapped[List["Node"]] = relationship(back_populates="subgraph")
 
 
 # --- 3. Modèle Node (Paragraphe / Unité du Graphe) ---
@@ -65,6 +85,7 @@ class Node(db.Model):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     subproject_id: Mapped[int] = mapped_column(ForeignKey('subproject.id'), nullable=False, index=True)
+    subgraph_id: Mapped[Optional[int]] = mapped_column(ForeignKey('subgraph.id'), nullable=True, index=True) # AJOUT
     mermaid_id: Mapped[str] = mapped_column(String(50), nullable=False)
     title: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     text_content: Mapped[str] = mapped_column(Text, nullable=False)
@@ -72,6 +93,7 @@ class Node(db.Model):
 
     # Relations
     subproject: Mapped["SubProject"] = relationship(back_populates="nodes")
+    subgraph: Mapped[Optional["Subgraph"]] = relationship(back_populates="nodes") # AJOUT
     source_relationships: Mapped[List["Relationship"]] = relationship(
         foreign_keys="Relationship.source_node_id",
         back_populates="source_node",
