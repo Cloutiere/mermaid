@@ -683,3 +683,64 @@ L'architecture est désormais stable concernant la persistance et la synchronisa
 3.  **Intégration Frontend des CRUD Styles :** (Ceci est en cours de finalisation avec les derniers commits Frontend).
 
 Le socle technique est prêt à supporter les prochaines itérations de développement.
+
+**MÉMORANDUM TECHNIQUE DÉTAILLÉ - SYNTHÈSE DE L'IMPLÉMENTATION ARCHITECTURALE V2.0**
+
+**À :** Chef de Projet / Équipe de Développement
+**De :** Architecte Logiciel Sénior
+**Date :** [Date du jour]
+**Objet :** Rapport de Finalisation et de Validation de l'Architecture V2.0 selon le Document de Décision (DDA).
+
+---
+
+### I. Résumé Exécutif
+
+L'intégralité du plan architectural de la V2.0 a été exécutée. Les trois initiatives structurantes (FNS 1, FNS 2, FNS 3) sont implémentées et intégrées. L'accent a été mis sur la **stabilité des données structurelles** et la **cohérence bidirectionnelle** (DB ↔ Mermaid code), permettant un haut niveau de confiance dans le modèle relationnel en tant que Source de Vérité (SOT) complète pour le graphe.
+
+Les points critiques de régression potentielle ont été gérés via des mécanismes transactionnels (Backend) et une logique de sauvegarde intelligente (Frontend).
+
+---
+
+### II. Implémentation des Exigences Fonctionnelles Structurantes (FNS)
+
+#### A. FNS 1 : Importation de Contenu JSON (Stabilité des IDs)
+
+| Exigence DDA | Mise en Œuvre et Validation |
+| :--- | :--- |
+| **Endpoint API (AC 1.1)** | `POST /api/nodes/import_content/<id>` créé. |
+| **Validation Pydantic** | Schéma `NodeContentImport` implémenté. |
+| **Logique Transactionnelle (AC 1.3)** | Service `import_node_content` utilise une transaction unique pour la mise à jour des `Node.text_content`. |
+| **Flexibilité de Mapping** | Le service supporte l'identification des nœuds par `Node.id` (numérique) **OU** `Node.mermaid_id` (alphanumérique), améliorant la résilience. |
+| **Rapport de Retour (AC 1.7)** | L'API retourne `{updated_count: int, ignored_ids: List[str]}`. |
+| **Stabilité des Nœuds (Correction Critique)** | Introduction d'une logique de sauvegarde PUT (structurelle) vs. PATCH (métadonnées) dans `GraphEditorPage.tsx` et `subprojects.py`. Ceci **préserve les IDs des nœuds** et leur contenu narratif (y compris les styles appliqués) si seul le titre ou le layout est modifié, ce qui résout la lacune critique identifiée. |
+
+#### B. FNS 2 : Gestion des Styles (ClassDef CRUD et Cohérence)
+
+Ceci représente l'ensemble des modifications les plus significatives pour garantir que le modèle de données inclut désormais les métadonnées de style.
+
+| Exigence DDA | Mise en Œuvre et Validation |
+| :--- | :--- |
+| **CRUD ClassDef (AC 2.1)** | Nouveau Blueprint `classdefs_bp` et service `classdefs.py` complets. |
+| **Cohérence sur Suppression (AC 2.4)** | `delete_classdef` exécute une `SQLAlchemy update` en masse pour mettre à `NULL` tous les `Node.style_class_ref` faisant référence à la classe supprimée, garantissant l'intégrité référentielle et la performance. |
+| **Application de Style (AC 2.5/2.6)** | Endpoint `PATCH /api/nodes/<id>/style` créé. Le service vérifie que la `ClassDef` appliquée existe dans le `SubProject` cible avant de mettre à jour `Node.style_class_ref`. Supporte la suppression de style (mise à `NULL`). |
+| **Persistance de la Direction (AC 2.9)** | Migration de DB effectuée pour ajouter `SubProject.graph_direction`. Parser/Générateur mis à jour pour lire/écrire cette information. |
+| **Correction Parser/Générateur (AC 2.9)** | Services de transformation mis à jour pour supporter la persistance bidirectionnelle des `Node.style_class_ref` et la direction du graphe (`graph LR/TD`). |
+| **Déclenchement de la Génération (AC 2.7)** | **Point Clé :** Toute opération de modification (CRUD ClassDef, PATCH Node style, Import Content) déclenche systématiquement la régénération de `SubProject.mermaid_definition` avant le `commit` de la transaction, assurant une synchronisation parfaite de l'artefact dérivé. |
+
+#### C. FNS 3 : Améliorations UX (Layout et Zoom/Pan)
+
+| Exigence DDA | Mise en Œuvre et Validation |
+| :--- | :--- |
+| **Layout Flexible (AC 3.1)** | `GraphEditorPage.tsx` utilise un état `editorWidthRatio` et des propriétés `flexBasis` pour permettre le redimensionnement dynamique entre l'éditeur et le visualiseur (0% à 100%). |
+| **Zoom/Pan (AC 3.2/3.3)** | Intégration de `react-zoom-pan-pinch` dans `MermaidViewer.tsx`. Configuration fine des limites (`minScale=0.1`, `maxScale=15`, `limitToBounds=false`). |
+| **Stabilité de Rendu** | Mécanisme de "hard reset" de Mermaid.js (`delete (window as any).mermaid`) justifié par un commentaire pour garantir la robustesse du rendu après le remplacement du DOM par l'éditeur. |
+
+---
+
+### III. Conclusion et Stabilité Architecturale
+
+L'architecture V2.0 est hautement stabilisée. Nous avons réussi à découpler la modification du contenu narratif/style de la reconstruction structurelle du graphe, garantissant la persistance des IDs primaires et des contenus non-structurels. Le modèle relationnel est désormais complet, englobant la structure (`Node`, `Relation`), le style (`ClassDef`, `style_class_ref`) et la présentation (`graph_direction`).
+
+L'implémentation a été réalisée avec une attention particulière à la robustesse transactionnelle et aux meilleures pratiques de typage (TypeScript `import type`, configuration Pydantic).
+
+L'application est prête pour la validation finale de l'intégration et le déploiement.
