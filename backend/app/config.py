@@ -19,6 +19,14 @@ class BaseConfig:
     # Exemple: postgresql://user:password@host:port/database
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'postgresql://user:password@host:port/database')
     SQLALCHEMY_TRACK_MODIFICATIONS = False # Désactive le suivi des modifications pour la performance
+    
+    # Options du moteur SQLAlchemy pour gérer les connexions perdues
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_pre_ping': True,  # Vérifie que la connexion est valide avant de l'utiliser
+        'pool_recycle': 300,    # Recycle les connexions après 5 minutes (300 secondes)
+        'pool_size': 10,        # Nombre de connexions permanentes dans le pool
+        'max_overflow': 20,     # Connexions supplémentaires au-delà du pool_size
+    }
 
     # URL du frontend pour la configuration CORS
     FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:5000') # Par défaut, le frontend tourne sur le port 5000
