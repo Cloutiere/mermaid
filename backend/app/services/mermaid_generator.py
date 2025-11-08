@@ -80,7 +80,10 @@ def generate_mermaid_from_subproject(subproject_id: int) -> str:
         for subgraph in subproject.subgraphs:
             safe_subgraph_title = _sanitize_title(subgraph.title, subgraph.mermaid_id)
             mermaid_parts.append(f"subgraph {subgraph.mermaid_id}[{safe_subgraph_title}]")
-            for node in subgraph.nodes:
+            
+            # Charger les nœuds de ce subgraph depuis subproject.nodes
+            subgraph_nodes = [node for node in subproject.nodes if node.subgraph_id == subgraph.id]
+            for node in subgraph_nodes:
                 title = node.title if node.title is not None else node.text_content
                 safe_title = _sanitize_title(title, node.mermaid_id)
                 mermaid_parts.append(f"    {node.mermaid_id}[{safe_title}]")
